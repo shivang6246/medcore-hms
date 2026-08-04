@@ -17,6 +17,10 @@ import com.medcore.hms.appointment.exception.AppointmentNotFoundException;
 import com.medcore.hms.appointment.exception.AppointmentStatusException;
 import com.medcore.hms.appointment.exception.AppointmentConflictException;
 import com.medcore.hms.appointment.exception.SlotNotAvailableException;
+import com.medcore.hms.medicalrecord.exception.AppointmentMismatchException;
+import com.medcore.hms.medicalrecord.exception.DuplicateMedicalRecordException;
+import com.medcore.hms.medicalrecord.exception.MedicalRecordNotFoundException;
+import com.medcore.hms.prescription.exception.PrescriptionNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -244,6 +248,114 @@ public class GlobalExceptionHandler {
                 "Request validation failed. Check 'errors' for details.");
         problem.setProperty("errors", fieldErrors);
         return problem;
+    }
+
+    @ExceptionHandler(MedicalRecordNotFoundException.class)
+    public ProblemDetail handleMedicalRecordNotFound(MedicalRecordNotFoundException ex) {
+        log.warn("Medical record not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Medical Record Not Found", "medical-record-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateMedicalRecordException.class)
+    public ProblemDetail handleDuplicateMedicalRecord(DuplicateMedicalRecordException ex) {
+        log.warn("Duplicate medical record: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Duplicate Medical Record", "duplicate-medical-record", ex.getMessage());
+    }
+
+    @ExceptionHandler(AppointmentMismatchException.class)
+    public ProblemDetail handleAppointmentMismatch(AppointmentMismatchException ex) {
+        log.warn("Appointment mismatch: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Appointment Mismatch", "appointment-mismatch", ex.getMessage());
+    }
+
+    @ExceptionHandler(PrescriptionNotFoundException.class)
+    public ProblemDetail handlePrescriptionNotFound(PrescriptionNotFoundException ex) {
+        log.warn("Prescription not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Prescription Not Found", "prescription-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.lab.exception.LabTestNotFoundException.class)
+    public ProblemDetail handleLabTestNotFound(com.medcore.hms.lab.exception.LabTestNotFoundException ex) {
+        log.warn("Lab test not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Lab Test Not Found", "lab-test-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.lab.exception.LabReportNotFoundException.class)
+    public ProblemDetail handleLabReportNotFound(com.medcore.hms.lab.exception.LabReportNotFoundException ex) {
+        log.warn("Lab report not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Lab Report Not Found", "lab-report-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.lab.exception.InvalidLabTestStatusException.class)
+    public ProblemDetail handleInvalidLabTestStatus(com.medcore.hms.lab.exception.InvalidLabTestStatusException ex) {
+        log.warn("Invalid lab test status: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Invalid Lab Test Status", "invalid-lab-test-status", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.pharmacy.exception.MedicineNotFoundException.class)
+    public ProblemDetail handleMedicineNotFound(com.medcore.hms.pharmacy.exception.MedicineNotFoundException ex) {
+        log.warn("Medicine not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Medicine Not Found", "medicine-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.pharmacy.exception.SupplierNotFoundException.class)
+    public ProblemDetail handleSupplierNotFound(com.medcore.hms.pharmacy.exception.SupplierNotFoundException ex) {
+        log.warn("Supplier not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Supplier Not Found", "supplier-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.pharmacy.exception.InsufficientStockException.class)
+    public ProblemDetail handleInsufficientStock(com.medcore.hms.pharmacy.exception.InsufficientStockException ex) {
+        log.warn("Insufficient stock: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Insufficient Stock", "insufficient-stock", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.pharmacy.exception.MedicineExpiredException.class)
+    public ProblemDetail handleMedicineExpired(com.medcore.hms.pharmacy.exception.MedicineExpiredException ex) {
+        log.warn("Medicine expired: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Medicine Expired", "medicine-expired", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.billing.exception.InvoiceNotFoundException.class)
+    public ProblemDetail handleInvoiceNotFound(com.medcore.hms.billing.exception.InvoiceNotFoundException ex) {
+        log.warn("Invoice not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Invoice Not Found", "invoice-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.billing.exception.PaymentNotFoundException.class)
+    public ProblemDetail handlePaymentNotFound(com.medcore.hms.billing.exception.PaymentNotFoundException ex) {
+        log.warn("Payment not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Payment Not Found", "payment-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.billing.exception.OverpaymentException.class)
+    public ProblemDetail handleOverpayment(com.medcore.hms.billing.exception.OverpaymentException ex) {
+        log.warn("Overpayment error: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Overpayment Error", "overpayment-error", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.billing.exception.InvalidRefundException.class)
+    public ProblemDetail handleInvalidRefund(com.medcore.hms.billing.exception.InvalidRefundException ex) {
+        log.warn("Invalid refund error: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Invalid Refund Error", "invalid-refund-error", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.ipd.exception.AdmissionNotFoundException.class)
+    public ProblemDetail handleAdmissionNotFound(com.medcore.hms.ipd.exception.AdmissionNotFoundException ex) {
+        log.warn("Admission not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Admission Not Found", "admission-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.ipd.exception.BedNotAvailableException.class)
+    public ProblemDetail handleBedNotAvailable(com.medcore.hms.ipd.exception.BedNotAvailableException ex) {
+        log.warn("Bed not available: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Bed Not Available", "bed-not-available", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.ipd.exception.ActiveAdmissionExistsException.class)
+    public ProblemDetail handleActiveAdmissionExists(com.medcore.hms.ipd.exception.ActiveAdmissionExistsException ex) {
+        log.warn("Active admission exists: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Active Admission Exists", "active-admission-exists", ex.getMessage());
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)

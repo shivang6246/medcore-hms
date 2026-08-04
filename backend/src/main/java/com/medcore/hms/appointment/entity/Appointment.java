@@ -100,7 +100,9 @@ public class Appointment extends BaseEntity {
     @Column(name = "consultation_fee", precision = 10, scale = 2)
     private BigDecimal consultationFee;
 
-    // TODO: MedicalRecord — @OneToOne(mappedBy = "appointment") MedicalRecord medicalRecord
+    @OneToOne(mappedBy = "appointment", fetch = FetchType.LAZY)
+    private com.medcore.hms.medicalrecord.entity.MedicalRecord medicalRecord;
+
     // TODO: Prescription  — @OneToMany(mappedBy = "appointment") List<Prescription> prescriptions
     // TODO: Bill          — @OneToOne(mappedBy = "appointment") Bill bill
 }
