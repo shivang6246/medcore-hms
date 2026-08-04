@@ -14,19 +14,32 @@ import {
   UserCircle,
   Layers,
   Menu,
+  FileText,
+  Pill,
+  Package,
+  CreditCard,
+  Bed,
+  Video
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { authApi } from '../../api/auth.api';
 import toast from 'react-hot-toast';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',    path: '/dashboard',    icon: LayoutDashboard, roles: null },
-  { label: 'Hospitals',    path: '/hospitals',    icon: Building2,       roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN'] },
-  { label: 'Departments',  path: '/departments',  icon: Layers,          roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DEPARTMENT_HEAD'] },
-  { label: 'Doctors',      path: '/doctors',      icon: Stethoscope,     roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR'] },
-  { label: 'Patients',     path: '/patients',     icon: Users,           roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE'] },
-  { label: 'Appointments', path: '/appointments', icon: CalendarDays,    roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
-  { label: 'Profile',      path: '/profile',      icon: UserCircle,      roles: null },
+  { label: 'Dashboard',       path: '/dashboard',       icon: LayoutDashboard, roles: null },
+  { label: 'Hospitals',       path: '/hospitals',       icon: Building2,       roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN'] },
+  { label: 'Departments',     path: '/departments',     icon: Layers,          roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DEPARTMENT_HEAD'] },
+  { label: 'Doctors',         path: '/doctors',         icon: Stethoscope,     roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR'] },
+  { label: 'Patients',        path: '/patients',        icon: Users,           roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE'] },
+  { label: 'Appointments',    path: '/appointments',    icon: CalendarDays,    roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
+  { label: 'Medical Records', path: '/medical-records', icon: FileText,        roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'PATIENT'] },
+  { label: 'Prescriptions',   path: '/prescriptions',   icon: Pill,            roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PHARMACIST', 'PATIENT'] },
+  { label: 'Laboratory',      path: '/laboratory',      icon: FlaskConical,    roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'LAB_TECHNICIAN', 'PATIENT'] },
+  { label: 'Pharmacy & Stock',path: '/pharmacy',        icon: Package,         roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'PHARMACIST'] },
+  { label: 'Billing & Payments',path:'/billing',        icon: CreditCard,      roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST', 'PATIENT'] },
+  { label: 'Inpatient (IPD)', path: '/ipd',             icon: Bed,             roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST'] },
+  { label: 'Telemedicine',    path: '/telemedicine',    icon: Video,           roles: ['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PATIENT', 'RECEPTIONIST'] },
+  { label: 'Profile',         path: '/profile',         icon: UserCircle,      roles: null },
 ];
 
 const Sidebar = () => {

@@ -18,6 +18,14 @@ import DepartmentList from './pages/departments/DepartmentList';
 import AppointmentList from './pages/appointments/AppointmentList';
 import PatientList from './pages/patients/PatientList';
 
+import MedicalRecords from './pages/MedicalRecords';
+import Prescriptions from './pages/Prescriptions';
+import Laboratory from './pages/Laboratory';
+import Pharmacy from './pages/Pharmacy';
+import Billing from './pages/Billing';
+import IpdManagement from './pages/IpdManagement';
+import Telemedicine from './pages/Telemedicine';
+
 // Layout
 import ProtectedRoute from './components/Layout/ProtectedRoute';
 
@@ -57,6 +65,13 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/appointments" element={<AppointmentList />} />
+          <Route path="/medical-records" element={<MedicalRecords />} />
+          <Route path="/prescriptions" element={<Prescriptions />} />
+          <Route path="/laboratory" element={<Laboratory />} />
+          <Route path="/pharmacy" element={<Pharmacy />} />
+          <Route path="/billing" element={<Billing />} />
+          <Route path="/ipd" element={<IpdManagement />} />
+          <Route path="/telemedicine" element={<Telemedicine />} />
 
           {/* Patient access */}
           <Route
