@@ -21,7 +21,7 @@
 ```
 medcore-hms/
 ├── backend/          ← Spring Boot application
-├── frontend/         ← (Week 2+) React/Angular UI
+├── frontend/         ← Vite + React + TypeScript UI
 ├── docs/
 │   ├── er-diagram.md         ← Database ER diagram
 │   └── architecture.md       ← Architecture decisions
@@ -100,6 +100,24 @@ docker compose up -d
 cd backend
 mvn spring-boot:run
 ```
+
+### Run Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+- UI: http://localhost:5173
+- API proxy: requests to `/api` forward to `http://localhost:8080`
+
+### Demo logins
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | `shivangv493@gmail.com` | `Password123!` |
+| Doctor | `dr.arjun.sharma@medcore-hospital.com` | `Doctor@123!` |
 
 ### Verify
 

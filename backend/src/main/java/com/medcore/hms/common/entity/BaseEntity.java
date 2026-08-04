@@ -10,10 +10,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Abstract base entity providing common audit fields for all entities.
- * JPA Auditing populates createdAt and updatedAt automatically.
- */
 @Getter
 @Setter
 @MappedSuperclass

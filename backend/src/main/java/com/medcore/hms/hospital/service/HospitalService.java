@@ -13,16 +13,21 @@ import java.util.UUID;
 /**
  * Service contract for Hospital lifecycle management.
  *
- * <p>Provides operations for creating, updating, querying,
+ * <p>
+ * Provides operations for creating, updating, querying,
  * activating and deactivating hospital tenants. All read operations
- * are scoped appropriately via RBAC at the controller layer.</p>
+ * are scoped appropriately via RBAC at the controller layer.
+ * </p>
  */
 public interface HospitalService {
 
     /** Onboard a new hospital tenant. */
     HospitalResponseDto createHospital(CreateHospitalRequestDto dto);
 
-    /** Update mutable fields of an existing hospital. Ignores null fields (partial update). */
+    /**
+     * Update mutable fields of an existing hospital. Ignores null fields (partial
+     * update).
+     */
     HospitalResponseDto updateHospital(UUID id, UpdateHospitalRequestDto dto);
 
     /** Retrieve full hospital details by ID. */
@@ -34,10 +39,11 @@ public interface HospitalService {
     /**
      * Paginated, searchable and filterable list of hospitals.
      *
-     * @param search    keyword matched against name, regNumber, licenseNumber, email, city
-     * @param isActive  filter by active status; null means no filter
-     * @param city      partial city name filter; null means no filter
-     * @param pageable  pagination and sort configuration
+     * @param search   keyword matched against name, regNumber, licenseNumber,
+     *                 email, city
+     * @param isActive filter by active status; null means no filter
+     * @param city     partial city name filter; null means no filter
+     * @param pageable pagination and sort configuration
      */
     PagedResponse<HospitalSummaryDto> getHospitals(String search, Boolean isActive, String city, Pageable pageable);
 
@@ -47,4 +53,3 @@ public interface HospitalService {
     /** Re-activate a previously deactivated hospital (sets isActive = true). */
     void activateHospital(UUID id);
 }
-

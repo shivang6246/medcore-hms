@@ -69,15 +69,20 @@ erDiagram
 
     DOCTOR {
         UUID id PK
-        UUID user_id FK
+        UUID user_id FK UK
         UUID hospital_id FK
         UUID department_id FK
+        VARCHAR employee_id
+        VARCHAR gender
+        DATE date_of_birth
         VARCHAR license_number UK
         VARCHAR specialization
-        INTEGER experience_years
         VARCHAR qualification
+        INTEGER years_of_experience
         DECIMAL consultation_fee
-        BOOLEAN is_available
+        VARCHAR profile_image_url
+        TEXT biography
+        BOOLEAN is_active
         TIMESTAMP created_at
         TIMESTAMP updated_at
     }
@@ -137,7 +142,9 @@ Many-to-many between `user` and `role`. A user can have multiple roles (e.g., a 
 Hospital-scoped grouping of doctors (e.g., Cardiology, Orthopedics). Belongs to one hospital.
 
 ### `doctor`
-Extends `user` via 1:1 `user_id` FK. Stores professional info (license, specialization, fee). Belongs to a department.
+Extends `user` via 1:1 `user_id` FK. Stores employment ID, professional info, and profile fields. Belongs to one hospital and one department. Soft-deleted via `is_active`. See [`doctor-module-design.md`](./doctor-module-design.md).
+
+**Unique constraints:** `license_number` (global), `(hospital_id, employee_id)`.
 
 ### `patient`
 Extends `user` via 1:1 `user_id` FK. Stores medical info. Has one address. Soft-deletable.

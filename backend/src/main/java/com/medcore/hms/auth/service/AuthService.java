@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -170,7 +171,7 @@ public class AuthService {
                         .email(pendingDto.email())
                         .passwordHash(pendingDto.passwordHash())
                         .phone(pendingDto.phone())
-                        .roles(Set.of(role))
+                        .roles(new HashSet<>(Set.of(role)))
                         .isActive(true)
                         .isEmailVerified(true)
                         .build();
@@ -303,7 +304,9 @@ public class AuthService {
                 user.getEmail(),
                 user.getPhone(),
                 roleNames,
-                user.getIsActive());
+                user.getIsActive(),
+                user.getHospital() != null ? user.getHospital().getId() : null,
+                user.getHospital() != null ? user.getHospital().getName() : null);
     }
 
     // -------------------------------------------------------------------------

@@ -9,15 +9,31 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
- * Doctor profile extending User (1:1 via user_id).
- * Stores professional information: license, specialization, fee, availability.
- * A doctor belongs to one department within one hospital.
+ * Doctor profile linked 1:1 to a User identity.
+ * Scoped to exactly one Hospital and one Department.
  */
 @Entity
-@Table(name = "doctor",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "license_number"}))
+@Table(
+        name = "doctor",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_doctor_user",        columnNames = "user_id"),
+                @UniqueConstraint(name = "uk_doctor_license",     columnNames = "license_number"),
+                @UniqueConstraint(name = "uk_doctor_email",       columnNames = "email"),
+                @UniqueConstraint(name = "uk_doctor_hospital_emp", columnNames = {"hospital_id", "employee_id"})
+        },
+        indexes = {
+                @Index(name = "idx_doctor_hospital_id",     columnList = "hospital_id"),
+                @Index(name = "idx_doctor_department_id",   columnList = "department_id"),
+                @Index(name = "idx_doctor_license",         columnList = "license_number"),
+                @Index(name = "idx_doctor_email",           columnList = "email"),
+                @Index(name = "idx_doctor_specialization",  columnList = "specialization"),
+                @Index(name = "idx_doctor_active",          columnList = "is_active"),
+                @Index(name = "idx_doctor_active_hospital", columnList = "hospital_id, is_active")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,45 +41,79 @@ import java.math.BigDecimal;
 @Builder
 public class Doctor extends BaseEntity {
 
-    /** 1:1 link to the User identity record. */
-    @NotNull(message = "User reference is required")
+    @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @NotNull(message = "Hospital is required")
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hospital_id", nullable = false)
     private Hospital hospital;
 
-    @NotNull(message = "Department is required")
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    @NotBlank(message = "License number is required")
+    @NotBlank
+    @Size(max = 50)
+    @Column(name = "employee_id", nullable = false, length = 50)
+    private String employeeId;
+
+    @NotBlank
+    @Email
+    @Size(max = 150)
+    @Column(nullable = false, unique = true, length = 150)
+    private String email;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Gender gender;
+
+    @Past
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @NotBlank
     @Size(max = 100)
     @Column(name = "license_number", nullable = false, unique = true, length = 100)
     private String licenseNumber;
 
-    @NotBlank(message = "Specialization is required")
+    @NotBlank
     @Size(max = 150)
     @Column(nullable = false, length = 150)
     private String specialization;
 
-    @Min(value = 0, message = "Experience years cannot be negative")
-    @Max(value = 60, message = "Experience years cannot exceed 60")
-    @Column(name = "experience_years")
-    private Integer experienceYears;
-
     @Size(max = 255)
+    @Column(length = 255)
     private String qualification;
 
-    @DecimalMin(value = "0.0", message = "Consultation fee cannot be negative")
+    @Min(0) @Max(60)
+    @Column(name = "years_of_experience")
+    @Builder.Default
+    private Integer yearsOfExperience = 0;
+
+    @DecimalMin("0.00")
     @Column(name = "consultation_fee", precision = 10, scale = 2)
-    private BigDecimal consultationFee;
+    @Builder.Default
+    private BigDecimal consultationFee = BigDecimal.ZERO;
+
+    @Size(max = 500)
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String biography;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Column(name = "is_available", nullable = false)
     @Builder.Default
     private Boolean isAvailable = true;
+
+    // TODO: Appointment — @OneToMany(mappedBy = "doctor") List<Appointment> appointments
+    // TODO: Prescription — @OneToMany(mappedBy = "doctor") List<Prescription> prescriptions
 }

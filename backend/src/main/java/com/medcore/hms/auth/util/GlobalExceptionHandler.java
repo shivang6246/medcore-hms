@@ -1,8 +1,22 @@
 package com.medcore.hms.auth.util;
 
+import com.medcore.hms.department.exception.DepartmentNotFoundException;
+import com.medcore.hms.doctor.exception.*;
+import com.medcore.hms.doctor.schedule.exception.ScheduleConflictException;
+import com.medcore.hms.doctor.schedule.exception.ScheduleNotFoundException;
+import com.medcore.hms.doctor.slot.exception.SlotAlreadyBookedException;
+import com.medcore.hms.doctor.slot.exception.SlotGenerationException;
+import com.medcore.hms.doctor.slot.exception.SlotNotFoundException;
 import com.medcore.hms.hospital.exception.DuplicateHospitalEmailException;
 import com.medcore.hms.hospital.exception.DuplicateRegistrationNumberException;
 import com.medcore.hms.hospital.exception.HospitalNotFoundException;
+import com.medcore.hms.patient.exception.DuplicatePatientEmailException;
+import com.medcore.hms.patient.exception.DuplicatePatientPhoneException;
+import com.medcore.hms.patient.exception.PatientNotFoundException;
+import com.medcore.hms.appointment.exception.AppointmentNotFoundException;
+import com.medcore.hms.appointment.exception.AppointmentStatusException;
+import com.medcore.hms.appointment.exception.AppointmentConflictException;
+import com.medcore.hms.appointment.exception.SlotNotAvailableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -71,6 +85,120 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleHospitalAlreadyExists(com.medcore.hms.hospital.exception.HospitalAlreadyExistsException ex) {
         log.warn("Hospital already exists: {}", ex.getMessage());
         return problem(HttpStatus.CONFLICT, "Hospital Already Exists", "hospital-already-exists", ex.getMessage());
+    }
+
+    @ExceptionHandler(DoctorNotFoundException.class)
+    public ProblemDetail handleDoctorNotFound(DoctorNotFoundException ex) {
+        log.warn("Doctor not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Doctor Not Found", "doctor-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateDoctorEmailException.class)
+    public ProblemDetail handleDuplicateDoctorEmail(DuplicateDoctorEmailException ex) {
+        log.warn("Duplicate doctor email: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Duplicate Doctor Email", "duplicate-doctor-email", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateLicenseNumberException.class)
+    public ProblemDetail handleDuplicateLicense(DuplicateLicenseNumberException ex) {
+        log.warn("Duplicate license number: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Duplicate License Number", "duplicate-license-number", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateEmployeeIdException.class)
+    public ProblemDetail handleDuplicateEmployeeId(DuplicateEmployeeIdException ex) {
+        log.warn("Duplicate employee ID: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Duplicate Employee ID", "duplicate-employee-id", ex.getMessage());
+    }
+
+    @ExceptionHandler(DoctorAlreadyExistsException.class)
+    public ProblemDetail handleDoctorAlreadyExists(DoctorAlreadyExistsException ex) {
+        log.warn("Doctor already exists: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Doctor Already Exists", "doctor-already-exists", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidDepartmentAssignmentException.class)
+    public ProblemDetail handleInvalidDepartmentAssignment(InvalidDepartmentAssignmentException ex) {
+        log.warn("Invalid department assignment: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Invalid Department Assignment", "invalid-department-assignment", ex.getMessage());
+    }
+
+    @ExceptionHandler(DepartmentNotFoundException.class)
+    public ProblemDetail handleDepartmentNotFound(DepartmentNotFoundException ex) {
+        log.warn("Department not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Department Not Found", "department-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(ScheduleNotFoundException.class)
+    public ProblemDetail handleScheduleNotFound(ScheduleNotFoundException ex) {
+        log.warn("Schedule not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Schedule Not Found", "schedule-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(ScheduleConflictException.class)
+    public ProblemDetail handleScheduleConflict(ScheduleConflictException ex) {
+        log.warn("Schedule conflict: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Schedule Conflict", "schedule-conflict", ex.getMessage());
+    }
+
+    @ExceptionHandler(SlotNotFoundException.class)
+    public ProblemDetail handleSlotNotFound(SlotNotFoundException ex) {
+        log.warn("Slot not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Slot Not Found", "slot-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(SlotAlreadyBookedException.class)
+    public ProblemDetail handleSlotAlreadyBooked(SlotAlreadyBookedException ex) {
+        log.warn("Slot already booked: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Slot Already Booked", "slot-already-booked", ex.getMessage());
+    }
+
+    @ExceptionHandler(SlotGenerationException.class)
+    public ProblemDetail handleSlotGenerationError(SlotGenerationException ex) {
+        log.warn("Slot generation error: {}", ex.getMessage());
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Slot Generation Error", "slot-generation-error", ex.getMessage());
+    }
+
+    @ExceptionHandler(PatientNotFoundException.class)
+    public ProblemDetail handlePatientNotFound(PatientNotFoundException ex) {
+        log.warn("Patient not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Patient Not Found", "patient-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicatePatientPhoneException.class)
+    public ProblemDetail handleDuplicatePatientPhone(DuplicatePatientPhoneException ex) {
+        log.warn("Duplicate patient phone: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Duplicate Patient Phone", "duplicate-patient-phone", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicatePatientEmailException.class)
+    public ProblemDetail handleDuplicatePatientEmail(DuplicatePatientEmailException ex) {
+        log.warn("Duplicate patient email: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Duplicate Patient Email", "duplicate-patient-email", ex.getMessage());
+    }
+
+    @ExceptionHandler(AppointmentNotFoundException.class)
+    public ProblemDetail handleAppointmentNotFound(AppointmentNotFoundException ex) {
+        log.warn("Appointment not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Appointment Not Found", "appointment-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(SlotNotAvailableException.class)
+    public ProblemDetail handleSlotNotAvailable(SlotNotAvailableException ex) {
+        log.warn("Slot not available: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Slot Not Available", "slot-not-available", ex.getMessage());
+    }
+
+    @ExceptionHandler(AppointmentStatusException.class)
+    public ProblemDetail handleAppointmentStatus(AppointmentStatusException ex) {
+        log.warn("Invalid appointment status transition: {}", ex.getMessage());
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Invalid Status Transition", "appointment-status-error", ex.getMessage());
+    }
+
+    @ExceptionHandler(AppointmentConflictException.class)
+    public ProblemDetail handleAppointmentConflict(AppointmentConflictException ex) {
+        log.warn("Appointment conflict: {}", ex.getMessage());
+        return problem(HttpStatus.CONFLICT, "Appointment Conflict", "appointment-conflict", ex.getMessage());
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
