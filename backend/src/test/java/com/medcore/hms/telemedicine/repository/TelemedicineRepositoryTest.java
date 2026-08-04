@@ -41,6 +41,7 @@ class TelemedicineRepositoryTest {
     @Autowired private DoctorRepository doctorRepository;
     @Autowired private com.medcore.hms.user.repository.UserRepository userRepository;
     @Autowired private com.medcore.hms.department.repository.DepartmentRepository departmentRepository;
+    @Autowired private com.medcore.hms.doctor.slot.repository.DoctorSlotRepository doctorSlotRepository;
 
     private Doctor doctor;
     private Patient patient;
@@ -102,11 +103,22 @@ class TelemedicineRepositoryTest {
                 .isActive(true)
                 .build());
 
+        com.medcore.hms.doctor.slot.entity.DoctorSlot slot = doctorSlotRepository.save(
+                com.medcore.hms.doctor.slot.entity.DoctorSlot.builder()
+                        .doctor(doctor)
+                        .slotDate(LocalDate.now())
+                        .startTime(LocalTime.of(10, 0))
+                        .endTime(LocalTime.of(10, 30))
+                        .status(com.medcore.hms.doctor.slot.entity.SlotStatus.BOOKED)
+                        .build()
+        );
+
         appointment = appointmentRepository.save(Appointment.builder()
-                .appointmentNumber("APT-TELE-01")
+                .appointmentNumber("APT-TELE-" + UUID.randomUUID().toString().substring(0, 5))
                 .hospital(hospital)
                 .patient(patient)
                 .doctor(doctor)
+                .slot(slot)
                 .appointmentDate(LocalDate.now())
                 .startTime(LocalTime.of(10, 0))
                 .endTime(LocalTime.of(10, 30))
