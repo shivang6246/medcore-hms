@@ -71,5 +71,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     Optional<Appointment> findBySlot_Id(UUID slotId);
 
+    long countByAppointmentDate(LocalDate appointmentDate);
+
     boolean existsByAppointmentNumber(String appointmentNumber);
 }

@@ -37,6 +37,8 @@ class IpdRepositoryTest {
     @Autowired private HospitalRepository hospitalRepository;
     @Autowired private PatientRepository patientRepository;
     @Autowired private DoctorRepository doctorRepository;
+    @Autowired private com.medcore.hms.user.repository.UserRepository userRepository;
+    @Autowired private com.medcore.hms.department.repository.DepartmentRepository departmentRepository;
 
     private Patient patient;
     private Doctor doctor;
@@ -55,6 +57,24 @@ class IpdRepositoryTest {
                 .isActive(true)
                 .build());
 
+        com.medcore.hms.department.entity.Department department = departmentRepository.save(
+                com.medcore.hms.department.entity.Department.builder()
+                        .name("General Medicine " + UUID.randomUUID().toString().substring(0, 5))
+                        .hospital(hospital)
+                        .isActive(true)
+                        .build()
+        );
+
+        com.medcore.hms.user.entity.User user = userRepository.save(
+                com.medcore.hms.user.entity.User.builder()
+                        .firstName("Doctor")
+                        .lastName("Strange")
+                        .email("doc_" + UUID.randomUUID().toString().substring(0, 8) + "@test.com")
+                        .passwordHash("hashed")
+                        .isActive(true)
+                        .build()
+        );
+
         patient = patientRepository.save(Patient.builder()
                 .hospital(hospital)
                 .patientId("PID-" + UUID.randomUUID().toString().substring(0, 8))
@@ -69,7 +89,11 @@ class IpdRepositoryTest {
                 .build());
 
         doctor = doctorRepository.save(Doctor.builder()
+                .user(user)
                 .hospital(hospital)
+                .department(department)
+                .employeeId("EMP-" + UUID.randomUUID().toString().substring(0, 8))
+                .email(user.getEmail())
                 .licenseNumber("DOC-" + UUID.randomUUID().toString().substring(0, 8))
                 .specialization("General Medicine")
                 .consultationFee(new BigDecimal("100.00"))

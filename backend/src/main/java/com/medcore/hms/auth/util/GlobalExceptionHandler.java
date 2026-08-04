@@ -358,6 +358,18 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.BAD_REQUEST, "Active Admission Exists", "active-admission-exists", ex.getMessage());
     }
 
+    @ExceptionHandler(com.medcore.hms.telemedicine.exception.TelemedicineSessionNotFoundException.class)
+    public ProblemDetail handleTelemedicineSessionNotFound(com.medcore.hms.telemedicine.exception.TelemedicineSessionNotFoundException ex) {
+        log.warn("Telemedicine session not found: {}", ex.getMessage());
+        return problem(HttpStatus.NOT_FOUND, "Telemedicine Session Not Found", "telemedicine-session-not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(com.medcore.hms.telemedicine.exception.InvalidSessionStateException.class)
+    public ProblemDetail handleInvalidSessionState(com.medcore.hms.telemedicine.exception.InvalidSessionStateException ex) {
+        log.warn("Invalid session state: {}", ex.getMessage());
+        return problem(HttpStatus.BAD_REQUEST, "Invalid Session State", "invalid-session-state", ex.getMessage());
+    }
+
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());
