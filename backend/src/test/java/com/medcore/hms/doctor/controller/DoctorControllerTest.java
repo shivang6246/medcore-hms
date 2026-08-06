@@ -255,10 +255,15 @@ class DoctorControllerTest {
 
         @Test
         @WithMockUser(roles = "PATIENT")
-        @DisplayName("403 — PATIENT cannot list doctors")
-        void getAll_ShouldReturn403_WhenPatient() throws Exception {
+        @DisplayName("200 — PATIENT can list doctors for booking")
+        void getAll_ShouldReturn200_WhenPatient() throws Exception {
+            PagedResponse<DoctorSummaryDto> paged = PagedResponse.from(
+                    new PageImpl<>(List.of(summaryDto), PageRequest.of(0, 10), 1));
+            when(doctorService.getAllDoctors(any())).thenReturn(paged);
+
             mockMvc.perform(get("/api/doctors"))
-                    .andExpect(status().isForbidden());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.totalElements").value(1));
         }
 
         @Test

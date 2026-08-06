@@ -105,10 +105,14 @@ class DashboardServiceImplTest {
         when(patientRepository.count()).thenReturn(150L);
         when(bedRepository.count()).thenReturn(50L);
         when(bedRepository.findByStatusAndIsActiveTrue(any())).thenReturn(List.of());
+        when(appointmentRepository.findAll()).thenReturn(List.of());
+        when(invoiceRepository.findByStatus(any(), any()))
+                .thenReturn(new PageImpl<>(List.of()));
 
         ReceptionDashboardDto result = dashboardService.getReceptionDashboard(hospitalId);
 
         assertThat(result).isNotNull();
         assertThat(result.totalRegisteredPatients()).isEqualTo(150L);
+        assertThat(result.openInvoicesCount()).isZero();
     }
 }

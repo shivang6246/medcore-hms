@@ -1,0 +1,4 @@
+{"sessionId":"8cb102","runId":"id-lookup","hypothesisId":"A","location":"EntityLookups:PatientIdLookup","message":"patient resolved without uuid paste","data":{"resolved":true},"timestamp":1785998275513}
+{"sessionId":"8cb102","runId":"auto-doctor","hypothesisId":"B","location":"EntityLookups:PatientIdLookup","message":"patient lookup auto-fill context","data":{"hasDoctor":true,"hasAppointment":true,"hasDoctorIdOnAppt":true,"hasEmployeeId":true},"timestamp":1785998849068}
+{"sessionId":"8cb102","runId":"auto-doctor","hypothesisId":"A","location":"EntityLookups:DoctorEmployeeLookup:auto","message":"doctor field auto-filled from patient appointment","data":{"hasEmployeeId":true},"timestamp":1785998849078}
+{"sessionId":"8cb102","runId":"auto-doctor","hypothesisId":"A","location":"Telemedicine:createSession","message":"session created via patient/emp lookups","data":{"hasPatientUuid":true,"hasDoctorUuid":true,"hasAppointment":true},"timestamp":1785998894535}
