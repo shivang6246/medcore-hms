@@ -135,6 +135,18 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional(readOnly = true)
+    public PatientResponseDto getPatientByEmail(String email) {
+        log.debug("Fetching patient by email: {}", email);
+        Patient patient = patientRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Patient not found for email: {}", email);
+                    return new PatientNotFoundException("No patient profile found for email: " + email);
+                });
+        return patientMapper.toResponseDto(patient);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PagedResponse<PatientSummaryDto> getAllPatients(UUID hospitalId, Pageable pageable) {
         int page = Math.max(0, pageable.getPageNumber());
         int size = Math.max(1, Math.min(100, pageable.getPageSize()));

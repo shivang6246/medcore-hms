@@ -143,7 +143,7 @@ public class AppointmentController {
             description = "Returns all slots for a doctor on a date with appointment details for booked ones. " +
                     "Includes slot counts (total/booked/available).")
     @GetMapping("/doctor/{doctorId}/schedule")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<DailyScheduleDto>> getDailySchedule(
             @PathVariable UUID doctorId,
             @Parameter(description = "Date (YYYY-MM-DD), defaults to today")

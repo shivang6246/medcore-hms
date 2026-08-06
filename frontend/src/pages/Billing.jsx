@@ -3,7 +3,8 @@ import { CreditCard, Plus, RefreshCw, DollarSign, Trash2 } from 'lucide-react';
 import { billingApi } from '../api/billing.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
-import { validateUUIDs } from '../utils/uuid';
+import { PatientIdLookup } from '../components/lookup/EntityLookups';
+import useAuthStore from '../store/authStore';
 
 const ITEM_CATEGORIES = ['CONSULTATION', 'LAB_TEST', 'PHARMACY', 'ADMISSION', 'OTHER'];
 
@@ -23,12 +24,14 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const uuidErr = validateUUIDs({ 'Patient ID': form.patientId });
-    if (uuidErr) { toast.error(uuidErr); return; }
+    if (!form.patientId) {
+      toast.error('Look up a patient first');
+      return;
+    }
     setLoading(true);
     try {
       await billingApi.createInvoice({
-        patientId: form.patientId.trim(),
+        patientId: form.patientId,
         issueDate: form.issueDate,
         dueDate: form.dueDate || undefined,
         taxAmount: parseFloat(form.taxAmount) || 0,
@@ -55,11 +58,11 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create Invoice" maxWidth="720px">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <PatientIdLookup
+          onResolved={(p) => set('patientId', p.id)}
+          onCleared={() => set('patientId', '')}
+        />
         <div className="form-grid">
-          <div className="form-group">
-            <label className="form-label">Patient ID *</label>
-            <input required value={form.patientId} onChange={(e) => set('patientId', e.target.value)} placeholder="Patient UUID" />
-          </div>
           <div className="form-group">
             <label className="form-label">Issue Date *</label>
             <input required type="date" value={form.issueDate} onChange={(e) => set('issueDate', e.target.value)} />
@@ -133,6 +136,10 @@ const statusStyle = (status) => {
 
 /* ── Main Billing Page ─────────────────────────────────────────────────── */
 export default function Billing() {
+  const { user, hasAnyRole } = useAuthStore();
+  const isPatient = hasAnyRole(['PATIENT']);
+  const canCreate = hasAnyRole(['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'ACCOUNTANT', 'RECEPTIONIST']);
+
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -140,7 +147,9 @@ export default function Billing() {
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await billingApi.getAllInvoices({ page: 0, size: 50 });
+      const res = isPatient && user?.patientId
+        ? await billingApi.getPatientInvoices(user.patientId, { page: 0, size: 50 })
+        : await billingApi.getAllInvoices({ page: 0, size: 50 });
       const payload = res.data;
       const list = payload?.data?.content ?? payload?.content ?? (Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []));
       setInvoices(list);
@@ -149,7 +158,7 @@ export default function Billing() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isPatient, user?.patientId]);
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
 
@@ -158,15 +167,21 @@ export default function Billing() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Billing & Payments</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Generate patient invoices, collect payments, manage tax & revenue reports</p>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {isPatient
+              ? 'View your invoices and payment status'
+              : 'Generate patient invoices, collect payments, manage tax & revenue reports'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn btn-secondary" onClick={fetchInvoices} title="Refresh">
             <RefreshCw size={18} />
           </button>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <Plus size={18} style={{ marginRight: '0.5rem' }} /> Create Invoice
-          </button>
+          {canCreate && (
+            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+              <Plus size={18} style={{ marginRight: '0.5rem' }} /> Create Invoice
+            </button>
+          )}
         </div>
       </div>
 
@@ -179,7 +194,7 @@ export default function Billing() {
         <div className="empty-state">
           <CreditCard size={48} />
           <h3>No invoices found</h3>
-          <p>Create your first invoice to get started.</p>
+          <p>{isPatient ? 'Invoices for your visits will appear here.' : 'Create your first invoice to get started.'}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
@@ -201,7 +216,7 @@ export default function Billing() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                <div><strong>Patient:</strong> {inv.patientName ?? inv.patientId ?? '—'}</div>
+                {!isPatient && <div><strong>Patient:</strong> {inv.patientName ?? inv.patientId ?? '—'}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', background: 'var(--color-bg-subtle, rgba(255,255,255,0.03))', padding: '0.75rem', borderRadius: '8px' }}>
                   <div>Subtotal: ${inv.subtotal ?? '—'}</div>
                   <div>Tax: ${inv.taxAmount ?? inv.tax ?? '—'}</div>
@@ -214,7 +229,9 @@ export default function Billing() {
         </div>
       )}
 
-      <CreateInvoiceModal isOpen={showCreate} onClose={() => setShowCreate(false)} onSuccess={fetchInvoices} />
+      {canCreate && (
+        <CreateInvoiceModal isOpen={showCreate} onClose={() => setShowCreate(false)} onSuccess={fetchInvoices} />
+      )}
     </div>
   );
 }

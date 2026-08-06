@@ -1,13 +1,32 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Pill, Plus, RefreshCw, Search, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Pill, Plus, Search, X } from 'lucide-react';
 import { prescriptionApi } from '../api/prescription.api';
+import { patientApi } from '../api/patient.api';
+import { medicalRecordApi } from '../api/medicalRecord.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
-import { isValidUUID, validateUUIDs } from '../utils/uuid';
+import useAuthStore from '../store/authStore';
+
+const unwrap = (res) => {
+  const payload = res?.data;
+  return payload?.data ?? payload;
+};
+
+const unwrapList = (res) => {
+  const data = unwrap(res);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.content)) return data.content;
+  return [];
+};
 
 /* ── New Prescription Modal ────────────────────────────────────────────── */
 const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [patientCode, setPatientCode] = useState('');
+  const [patient, setPatient] = useState(null);
+  const [records, setRecords] = useState([]);
   const [form, setForm] = useState({
     medicalRecordId: '', medicineName: '', dosage: '',
     frequency: '', duration: '', instructions: '', quantity: '',
@@ -15,16 +34,66 @@ const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const reset = () => {
+    setPatientCode('');
+    setPatient(null);
+    setRecords([]);
+    setForm({
+      medicalRecordId: '', medicineName: '', dosage: '',
+      frequency: '', duration: '', instructions: '', quantity: '',
+    });
+  };
+
+  const handleLookupPatient = async () => {
+    const code = patientCode.trim();
+    if (!code) {
+      toast.error('Enter a patient ID (e.g. P-2026-00001)');
+      return;
+    }
+    if (!user?.hospitalId) {
+      toast.error('Your account has no hospital context. Re-login as hospital staff.');
+      return;
+    }
+
+    setLookingUp(true);
+    setPatient(null);
+    setRecords([]);
+    setForm((f) => ({ ...f, medicalRecordId: '' }));
+
+    try {
+      const patientRes = await patientApi.getByPatientId(code, user.hospitalId);
+      const p = unwrap(patientRes);
+      if (!p?.id) {
+        toast.error('Patient not found for that ID');
+        return;
+      }
+      setPatient(p);
+
+      const recordRes = await medicalRecordApi.getByPatient(p.id, { page: 0, size: 50 });
+      const list = unwrapList(recordRes);
+      setRecords(list);
+      if (!list.length) {
+        toast.error('No medical records for this patient. Create one first.');
+      } else {
+        toast.success(`Found ${p.firstName} ${p.lastName} — select a medical record`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail ?? err.response?.data?.message ?? 'Patient lookup failed');
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isValidUUID(form.medicalRecordId)) {
-      toast.error('Medical Record ID must be a valid UUID (e.g. 3a8f1c7d-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
+    if (!form.medicalRecordId) {
+      toast.error('Look up a patient and select a medical record first');
       return;
     }
     setLoading(true);
     try {
       await prescriptionApi.create({
-        medicalRecordId: form.medicalRecordId.trim(),
+        medicalRecordId: form.medicalRecordId,
         medicineName: form.medicineName,
         dosage: form.dosage,
         frequency: form.frequency,
@@ -33,9 +102,9 @@ const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
         quantity: form.quantity ? parseInt(form.quantity, 10) : undefined,
       });
       toast.success('Prescription created successfully!');
-      onSuccess();
+      onSuccess(form.medicalRecordId);
       onClose();
-      setForm({ medicalRecordId: '', medicineName: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '' });
+      reset();
     } catch (err) {
       toast.error(err.response?.data?.message ?? err.response?.data?.detail ?? 'Failed to create prescription.');
     } finally {
@@ -44,12 +113,57 @@ const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="New Prescription" maxWidth="640px">
+    <Modal isOpen={isOpen} onClose={() => { reset(); onClose(); }} title="New Prescription" maxWidth="640px">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div className="form-group">
-          <label className="form-label">Medical Record ID *</label>
-          <input required value={form.medicalRecordId} onChange={(e) => set('medicalRecordId', e.target.value)} placeholder="Medical Record UUID" />
+          <label className="form-label">Patient ID *</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              required
+              value={patientCode}
+              onChange={(e) => setPatientCode(e.target.value)}
+              placeholder="e.g. P-2026-00001"
+              style={{ flex: 1 }}
+            />
+            <button type="button" className="btn btn-secondary" onClick={handleLookupPatient} disabled={lookingUp}>
+              {lookingUp ? 'Looking up…' : 'Lookup'}
+            </button>
+          </div>
         </div>
+
+        {patient && (
+          <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontSize: '0.9rem' }}>
+            <strong>{patient.firstName} {patient.lastName}</strong>
+            <span style={{ color: 'var(--text-muted)' }}> · {patient.patientId}</span>
+            {patient.phone && <span style={{ color: 'var(--text-muted)' }}> · {patient.phone}</span>}
+          </div>
+        )}
+
+        <div className="form-group">
+          <label className="form-label">Medical Record *</label>
+          <select
+            className="form-input"
+            required
+            value={form.medicalRecordId}
+            onChange={(e) => set('medicalRecordId', e.target.value)}
+            disabled={!patient || records.length === 0}
+          >
+            <option value="">
+              {!patient
+                ? 'Look up a patient first'
+                : records.length
+                  ? 'Select medical record'
+                  : 'No medical records found'}
+            </option>
+            {records.map((r) => (
+              <option key={r.id} value={r.id}>
+                {(r.diagnosis || 'Record')} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
+                {r.doctorName ? ` · ${r.doctorName}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Medicine Name *</label>
@@ -77,8 +191,8 @@ const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
           <textarea rows={2} value={form.instructions} onChange={(e) => set('instructions', e.target.value)} placeholder="Complete full course, drink plenty of water" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button type="button" className="btn btn-secondary" onClick={() => { reset(); onClose(); }}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !form.medicalRecordId}>
             {loading ? 'Creating…' : 'Create Prescription'}
           </button>
         </div>
@@ -87,42 +201,126 @@ const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
-/* ── Search by Medical Record Modal ─────────────────────────────────────── */
+/* ── Search by Patient Modal ────────────────────────────────────────────── */
 const SearchModal = ({ isOpen, onClose, onResults }) => {
+  const { user } = useAuthStore();
+  const [patientCode, setPatientCode] = useState('');
+  const [lookingUp, setLookingUp] = useState(false);
+  const [patient, setPatient] = useState(null);
+  const [records, setRecords] = useState([]);
   const [medicalRecordId, setMedicalRecordId] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const reset = () => {
+    setPatientCode('');
+    setPatient(null);
+    setRecords([]);
+    setMedicalRecordId('');
+  };
+
+  const handleLookupPatient = async () => {
+    const code = patientCode.trim();
+    if (!code) {
+      toast.error('Enter a patient ID (e.g. P-2026-00001)');
+      return;
+    }
+    if (!user?.hospitalId) {
+      toast.error('Hospital context missing on your account');
+      return;
+    }
+    setLookingUp(true);
+    setPatient(null);
+    setRecords([]);
+    setMedicalRecordId('');
+    try {
+      const patientRes = await patientApi.getByPatientId(code, user.hospitalId);
+      const p = unwrap(patientRes);
+      if (!p?.id) {
+        toast.error('Patient not found');
+        return;
+      }
+      setPatient(p);
+      const recordRes = await medicalRecordApi.getByPatient(p.id, { page: 0, size: 50 });
+      const list = unwrapList(recordRes);
+      setRecords(list);
+      if (!list.length) toast.error('No medical records for this patient');
+    } catch (err) {
+      toast.error(err.response?.data?.detail ?? err.response?.data?.message ?? 'Patient lookup failed');
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!medicalRecordId.trim()) return;
-    if (!isValidUUID(medicalRecordId)) {
-      toast.error('Medical Record ID must be a valid UUID (e.g. 3a8f1c7d-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
+    if (!medicalRecordId) {
+      toast.error('Select a medical record');
       return;
     }
     setLoading(true);
     try {
-      const res = await prescriptionApi.getByMedicalRecord(medicalRecordId.trim(), { page: 0, size: 50 });
-      const payload = res.data;
-      const list = payload?.data?.content ?? payload?.content ?? (Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []));
-      onResults(list);
+      const res = await prescriptionApi.getByMedicalRecord(medicalRecordId, { page: 0, size: 50 });
+      onResults(unwrapList(res));
       onClose();
+      reset();
     } catch (err) {
-      toast.error(err.response?.data?.message ?? 'No prescriptions found for that Medical Record ID.');
+      toast.error(err.response?.data?.message ?? 'No prescriptions found for that medical record.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Search by Medical Record" maxWidth="460px">
+    <Modal isOpen={isOpen} onClose={() => { reset(); onClose(); }} title="Search Prescriptions" maxWidth="520px">
       <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div className="form-group">
-          <label className="form-label">Medical Record UUID *</label>
-          <input required value={medicalRecordId} onChange={(e) => setMedicalRecordId(e.target.value)} placeholder="e.g. 3a8f1c7d-…" />
+          <label className="form-label">Patient ID *</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              required
+              value={patientCode}
+              onChange={(e) => setPatientCode(e.target.value)}
+              placeholder="e.g. P-2026-00001"
+              style={{ flex: 1 }}
+            />
+            <button type="button" className="btn btn-secondary" onClick={handleLookupPatient} disabled={lookingUp}>
+              {lookingUp ? 'Looking up…' : 'Lookup'}
+            </button>
+          </div>
         </div>
+
+        {patient && (
+          <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', fontSize: '0.9rem' }}>
+            <strong>{patient.firstName} {patient.lastName}</strong>
+            <span style={{ color: 'var(--text-muted)' }}> · {patient.patientId}</span>
+          </div>
+        )}
+
+        <div className="form-group">
+          <label className="form-label">Medical Record *</label>
+          <select
+            className="form-input"
+            required
+            value={medicalRecordId}
+            onChange={(e) => setMedicalRecordId(e.target.value)}
+            disabled={!patient || records.length === 0}
+          >
+            <option value="">
+              {!patient ? 'Look up a patient first' : records.length ? 'Select medical record' : 'No records found'}
+            </option>
+            {records.map((r) => (
+              <option key={r.id} value={r.id}>
+                {(r.diagnosis || 'Record')} · {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Searching…' : 'Search'}</button>
+          <button type="button" className="btn btn-secondary" onClick={() => { reset(); onClose(); }}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !medicalRecordId}>
+            {loading ? 'Searching…' : 'Search'}
+          </button>
         </div>
       </form>
     </Modal>
@@ -131,14 +329,47 @@ const SearchModal = ({ isOpen, onClose, onResults }) => {
 
 /* ── Main Prescriptions Page ───────────────────────────────────────────── */
 export default function Prescriptions() {
+  const { user, hasAnyRole } = useAuthStore();
+  const isPatient = hasAnyRole(['PATIENT']);
+  const canCreate = hasAnyRole(['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR']);
+  const canSearch = hasAnyRole(['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PHARMACIST', 'NURSE']);
+
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [filtered, setFiltered] = useState(false);
 
-  // On first render show placeholder — prescriptions require a medical record ID to fetch
-  useEffect(() => { setLoading(false); }, []);
+  useEffect(() => {
+    if (!isPatient || !user?.patientId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const recordsRes = await medicalRecordApi.getByPatient(user.patientId, { page: 0, size: 50 });
+        const records = unwrapList(recordsRes);
+        const lists = await Promise.all(
+          records.map((r) =>
+            prescriptionApi.getByMedicalRecord(r.id, { page: 0, size: 50 })
+              .then(unwrapList)
+              .catch(() => []),
+          ),
+        );
+        if (!cancelled) {
+          setPrescriptions(lists.flat());
+          setFiltered(true);
+        }
+      } catch {
+        if (!cancelled) setPrescriptions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isPatient, user?.patientId]);
 
   const handleSearchResults = (results) => {
     setPrescriptions(results);
@@ -150,25 +381,44 @@ export default function Prescriptions() {
     setFiltered(false);
   };
 
+  const reloadForRecord = async (medicalRecordId) => {
+    if (!medicalRecordId) return;
+    try {
+      const res = await prescriptionApi.getByMedicalRecord(medicalRecordId, { page: 0, size: 50 });
+      setPrescriptions(unwrapList(res));
+      setFiltered(true);
+    } catch {
+      /* keep existing list */
+    }
+  };
+
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Prescriptions</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage electronic prescriptions and medicine dosages</p>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {isPatient
+              ? 'View medicines prescribed for you'
+              : 'Manage electronic prescriptions and medicine dosages'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          {filtered && (
+          {filtered && !isPatient && (
             <button className="btn btn-secondary" onClick={clearFilter} title="Clear results">
               <X size={18} />
             </button>
           )}
-          <button className="btn btn-secondary" onClick={() => setShowSearch(true)}>
-            <Search size={18} style={{ marginRight: '0.5rem' }} /> Search by Record
-          </button>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <Plus size={18} style={{ marginRight: '0.5rem' }} /> New Prescription
-          </button>
+          {canSearch && (
+            <button className="btn btn-secondary" onClick={() => setShowSearch(true)}>
+              <Search size={18} style={{ marginRight: '0.5rem' }} /> Search by Patient
+            </button>
+          )}
+          {canCreate && (
+            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+              <Plus size={18} style={{ marginRight: '0.5rem' }} /> New Prescription
+            </button>
+          )}
         </div>
       </div>
 
@@ -180,8 +430,14 @@ export default function Prescriptions() {
       ) : prescriptions.length === 0 ? (
         <div className="empty-state">
           <Pill size={48} />
-          <h3>{filtered ? 'No prescriptions found' : 'Search for prescriptions'}</h3>
-          <p>{filtered ? 'No prescriptions linked to that medical record.' : 'Use "Search by Record" to load prescriptions for a medical record, or create a new one.'}</p>
+          <h3>{filtered || isPatient ? 'No prescriptions found' : 'Search for prescriptions'}</h3>
+          <p>
+            {isPatient
+              ? 'Prescriptions from your visits will appear here.'
+              : filtered
+                ? 'No prescriptions linked to that medical record.'
+                : 'Look up a patient ID to load prescriptions, or create a new one.'}
+          </p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
@@ -222,8 +478,16 @@ export default function Prescriptions() {
         </div>
       )}
 
-      <NewPrescriptionModal isOpen={showCreate} onClose={() => setShowCreate(false)} onSuccess={() => {}} />
-      <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} onResults={handleSearchResults} />
+      {canCreate && (
+        <NewPrescriptionModal
+          isOpen={showCreate}
+          onClose={() => setShowCreate(false)}
+          onSuccess={reloadForRecord}
+        />
+      )}
+      {canSearch && (
+        <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} onResults={handleSearchResults} />
+      )}
     </div>
   );
 }

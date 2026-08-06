@@ -3,13 +3,15 @@ import { FlaskConical, RefreshCw, Plus, Clock, CheckCircle2 } from 'lucide-react
 import { labApi } from '../api/lab.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
-import { validateUUIDs } from '../utils/uuid';
+import { PatientIdLookup, DoctorEmployeeLookup, AppointmentSelect, resolveDoctorFromAppointment } from '../components/lookup/EntityLookups';
+import useAuthStore from '../store/authStore';
 
 const PRIORITIES = ['NORMAL', 'URGENT', 'STAT'];
 
 /* ── Order Lab Test Modal ──────────────────────────────────────────────── */
 const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [autoDoctor, setAutoDoctor] = useState(null);
   const [form, setForm] = useState({
     patientId: '', doctorId: '', appointmentId: '',
     testType: '', priority: 'NORMAL', instructions: '',
@@ -17,20 +19,45 @@ const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const reset = () => {
+    setForm({
+      patientId: '', doctorId: '', appointmentId: '',
+      testType: '', priority: 'NORMAL', instructions: '',
+    });
+    setAutoDoctor(null);
+  };
+
+  const applyContext = (ctx) => {
+    setForm((f) => ({
+      ...f,
+      appointmentId: ctx?.appointmentId || '',
+      doctorId: ctx?.doctor?.id || '',
+    }));
+    setAutoDoctor(ctx?.doctor || null);
+  };
+
+  const handleAppointmentChange = async (id, appt) => {
+    set('appointmentId', id);
+    if (!appt) return;
+    const doctor = await resolveDoctorFromAppointment(appt);
+    if (doctor) {
+      setAutoDoctor(doctor);
+      set('doctorId', doctor.id);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const uuidErr = validateUUIDs({
-      'Patient ID': form.patientId,
-      'Doctor ID': form.doctorId,
-      ...(form.appointmentId ? { 'Appointment ID': form.appointmentId } : {}),
-    });
-    if (uuidErr) { toast.error(uuidErr); return; }
+    if (!form.patientId || !form.doctorId) {
+      toast.error('Look up patient and doctor first');
+      return;
+    }
     setLoading(true);
     try {
       await labApi.createTest({
-        patientId: form.patientId.trim(),
-        doctorId: form.doctorId.trim(),
-        appointmentId: form.appointmentId?.trim() || undefined,
+        patientId: form.patientId,
+        doctorId: form.doctorId,
+        appointmentId: form.appointmentId || undefined,
         testType: form.testType,
         priority: form.priority,
         instructions: form.instructions || undefined,
@@ -38,7 +65,7 @@ const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
       toast.success('Lab test ordered successfully!');
       onSuccess();
       onClose();
-      setForm({ patientId: '', doctorId: '', appointmentId: '', testType: '', priority: 'NORMAL', instructions: '' });
+      reset();
     } catch (err) {
       toast.error(err.response?.data?.message ?? err.response?.data?.detail ?? 'Failed to order lab test.');
     } finally {
@@ -47,17 +74,28 @@ const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Order Lab Test" maxWidth="620px">
+    <Modal isOpen={isOpen} onClose={() => { reset(); onClose(); }} title="Order Lab Test" maxWidth="620px">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <PatientIdLookup
+          onResolved={(p) => setForm((f) => ({ ...f, patientId: p.id, appointmentId: '', doctorId: '' }))}
+          onCleared={() => {
+            setForm((f) => ({ ...f, patientId: '', appointmentId: '', doctorId: '' }));
+            setAutoDoctor(null);
+          }}
+          onContext={applyContext}
+        />
+        <DoctorEmployeeLookup
+          key={form.patientId || 'no-patient'}
+          autoDoctor={autoDoctor}
+          onResolved={(d) => set('doctorId', d.id)}
+          onCleared={() => { set('doctorId', ''); setAutoDoctor(null); }}
+        />
+        <AppointmentSelect
+          patientUuid={form.patientId}
+          value={form.appointmentId}
+          onChange={handleAppointmentChange}
+        />
         <div className="form-grid">
-          <div className="form-group">
-            <label className="form-label">Patient ID *</label>
-            <input required value={form.patientId} onChange={(e) => set('patientId', e.target.value)} placeholder="Patient UUID" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Doctor ID *</label>
-            <input required value={form.doctorId} onChange={(e) => set('doctorId', e.target.value)} placeholder="Doctor UUID" />
-          </div>
           <div className="form-group">
             <label className="form-label">Test Type *</label>
             <input required value={form.testType} onChange={(e) => set('testType', e.target.value)} placeholder="Complete Blood Count (CBC)" />
@@ -68,18 +106,14 @@ const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
               {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
-          <div className="form-group">
-            <label className="form-label">Appointment ID</label>
-            <input value={form.appointmentId} onChange={(e) => set('appointmentId', e.target.value)} placeholder="Optional" />
-          </div>
         </div>
         <div className="form-group">
           <label className="form-label">Instructions</label>
           <textarea rows={2} value={form.instructions} onChange={(e) => set('instructions', e.target.value)} placeholder="e.g. Fasting required for 12 hours" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button type="button" className="btn btn-secondary" onClick={() => { reset(); onClose(); }}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !form.patientId || !form.doctorId}>
             {loading ? 'Ordering…' : 'Order Lab Test'}
           </button>
         </div>
@@ -108,6 +142,10 @@ const priorityStyle = (priority) => {
 
 /* ── Main Laboratory Page ──────────────────────────────────────────────── */
 export default function Laboratory() {
+  const { user, hasAnyRole } = useAuthStore();
+  const isPatient = hasAnyRole(['PATIENT']);
+  const canOrder = hasAnyRole(['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'LAB_TECHNICIAN']);
+
   const [labTests, setLabTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showOrder, setShowOrder] = useState(false);
@@ -115,10 +153,9 @@ export default function Laboratory() {
   const fetchLabTests = useCallback(async () => {
     setLoading(true);
     try {
-      // Try the generic list endpoint — backend has GET /api/lab-tests (via search or list)
-      const res = await labApi.getAll
-        ? labApi.getAll({ page: 0, size: 50 })
-        : { data: { data: { content: [] } } };
+      const res = isPatient && user?.patientId
+        ? await labApi.getByPatient(user.patientId, { page: 0, size: 50 })
+        : await labApi.getAll({ page: 0, size: 50 });
       const payload = res.data;
       const list = payload?.data?.content ?? payload?.content ?? (Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload) ? payload : []));
       setLabTests(list);
@@ -127,7 +164,7 @@ export default function Laboratory() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isPatient, user?.patientId]);
 
   useEffect(() => { fetchLabTests(); }, [fetchLabTests]);
 
@@ -135,16 +172,22 @@ export default function Laboratory() {
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Laboratory Management</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Track diagnostic orders, technician assignments, and lab report publishing</p>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Laboratory</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {isPatient
+              ? 'View your lab orders and reports'
+              : 'Track diagnostic orders, technician assignments, and lab report publishing'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn btn-secondary" onClick={fetchLabTests} title="Refresh">
             <RefreshCw size={18} />
           </button>
-          <button className="btn btn-primary" onClick={() => setShowOrder(true)}>
-            <FlaskConical size={18} style={{ marginRight: '0.5rem' }} /> Order Lab Test
-          </button>
+          {canOrder && (
+            <button className="btn btn-primary" onClick={() => setShowOrder(true)}>
+              <FlaskConical size={18} style={{ marginRight: '0.5rem' }} /> Order Lab Test
+            </button>
+          )}
         </div>
       </div>
 
@@ -157,7 +200,7 @@ export default function Laboratory() {
         <div className="empty-state">
           <FlaskConical size={48} />
           <h3>No lab tests found</h3>
-          <p>Order a lab test to get started.</p>
+          <p>{isPatient ? 'Lab orders for you will appear here.' : 'Order a lab test to get started.'}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
@@ -179,7 +222,7 @@ export default function Laboratory() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                <div><strong>Patient:</strong> {t.patientName ?? t.patientId ?? '—'}</div>
+                {!isPatient && <div><strong>Patient:</strong> {t.patientName ?? t.patientId ?? '—'}</div>}
                 <div><strong>Ordering Doctor:</strong> {t.doctorName ?? t.doctorId ?? '—'}</div>
                 {t.result && (
                   <div style={{ marginTop: '0.5rem', background: 'var(--color-bg-subtle, rgba(255,255,255,0.03))', padding: '0.75rem', borderRadius: '8px' }}>
@@ -194,7 +237,9 @@ export default function Laboratory() {
         </div>
       )}
 
-      <OrderLabTestModal isOpen={showOrder} onClose={() => setShowOrder(false)} onSuccess={fetchLabTests} />
+      {canOrder && (
+        <OrderLabTestModal isOpen={showOrder} onClose={() => setShowOrder(false)} onSuccess={fetchLabTests} />
+      )}
     </div>
   );
 }

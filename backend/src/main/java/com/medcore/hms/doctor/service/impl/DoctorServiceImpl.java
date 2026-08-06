@@ -124,6 +124,16 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     @Transactional(readOnly = true)
+    public DoctorResponseDto getDoctorByEmployeeId(String employeeId, UUID hospitalId) {
+        log.debug("Fetching doctor — employeeId: {} hospital: {}", employeeId, hospitalId);
+        Doctor doctor = doctorRepository.findByEmployeeIdAndHospital_Id(employeeId, hospitalId)
+                .orElseThrow(() -> new DoctorNotFoundException(
+                        "Doctor not found with employeeId: " + employeeId + " in hospital: " + hospitalId));
+        return doctorMapper.toResponseDto(doctor);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PagedResponse<DoctorSummaryDto> getAllDoctors(Pageable pageable) {
         int pageNumber = Math.max(0, pageable.getPageNumber());
         int pageSize   = Math.max(1, Math.min(100, pageable.getPageSize()));

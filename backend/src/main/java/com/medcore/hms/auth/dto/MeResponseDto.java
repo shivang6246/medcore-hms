@@ -16,5 +16,6 @@ public record MeResponseDto(
         Set<String> roles,
         Boolean isActive,
         UUID hospitalId,
-        String hospitalName
+        String hospitalName,
+        UUID patientId
 ) {}

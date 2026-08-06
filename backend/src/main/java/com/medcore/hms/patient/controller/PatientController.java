@@ -17,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -64,7 +66,7 @@ public class PatientController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden")
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<PagedResponse<PatientSummaryDto>>> getAllPatients(
             @Parameter(description = "Hospital UUID to scope results") @RequestParam UUID hospitalId,
             @Parameter(description = "Page index (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
@@ -103,6 +105,20 @@ public class PatientController {
         PagedResponse<PatientSummaryDto> result = patientService.searchPatients(
                 criteria, PageRequest.of(page, size, parseSort(sort)));
         return ResponseEntity.ok(ApiResponse.success(result, "Search completed successfully"));
+    }
+
+    @Operation(
+            summary = "Get current patient's profile",
+            description = "Returns the Patient record linked to the authenticated user's email. PATIENT role only."
+    )
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PatientResponseDto>> getMyPatientProfile(
+            @AuthenticationPrincipal UserDetails currentUser) {
+        log.debug("Fetching patient profile for authenticated user: {}", currentUser.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(
+                patientService.getPatientByEmail(currentUser.getUsername()),
+                "Patient profile fetched successfully"));
     }
 
     @Operation(

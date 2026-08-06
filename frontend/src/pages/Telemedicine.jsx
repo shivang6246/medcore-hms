@@ -4,39 +4,64 @@ import { telemedicineApi } from '../api/telemedicine.api';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
-import { validateUUIDs } from '../utils/uuid';
+import { PatientIdLookup, DoctorEmployeeLookup, AppointmentSelect, resolveDoctorFromAppointment } from '../components/lookup/EntityLookups';
 
 /* ── Create Session Modal ───────────────────────────────────────────────── */
 const CreateSessionModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [autoDoctor, setAutoDoctor] = useState(null);
   const [form, setForm] = useState({
     patientId: '', doctorId: '', appointmentId: '',
     scheduledStartTime: '', notes: '',
   });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const reset = () => {
+    setForm({
+      patientId: '', doctorId: '', appointmentId: '',
+      scheduledStartTime: '', notes: '',
+    });
+    setAutoDoctor(null);
+  };
+
+  const applyContext = async (ctx) => {
+    setForm((f) => ({
+      ...f,
+      appointmentId: ctx?.appointmentId || '',
+      doctorId: ctx?.doctor?.id || '',
+    }));
+    setAutoDoctor(ctx?.doctor || null);
+  };
+
+  const handleAppointmentChange = async (id, appt) => {
+    set('appointmentId', id);
+    if (!appt) return;
+    const doctor = await resolveDoctorFromAppointment(appt);
+    if (doctor) {
+      setAutoDoctor(doctor);
+      set('doctorId', doctor.id);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const uuidErr = validateUUIDs({
-      'Patient ID': form.patientId,
-      'Doctor ID': form.doctorId,
-      ...(form.appointmentId ? { 'Appointment ID': form.appointmentId } : {}),
-    });
-    if (uuidErr) { toast.error(uuidErr); return; }
+    if (!form.patientId || !form.doctorId) {
+      toast.error('Look up patient and doctor first');
+      return;
+    }
     setLoading(true);
     try {
       await telemedicineApi.createSession({
-        patientId: form.patientId.trim(),
-        doctorId: form.doctorId.trim(),
-        appointmentId: form.appointmentId?.trim() || undefined,
+        patientId: form.patientId,
+        doctorId: form.doctorId,
+        appointmentId: form.appointmentId || undefined,
         scheduledStartTime: form.scheduledStartTime ? new Date(form.scheduledStartTime).toISOString() : undefined,
         notes: form.notes || undefined,
       });
       toast.success('Consultation room created!');
       onSuccess();
       onClose();
-      setForm({ patientId: '', doctorId: '', appointmentId: '', scheduledStartTime: '', notes: '' });
+      reset();
     } catch (err) {
       toast.error(err.response?.data?.message ?? err.response?.data?.detail ?? 'Failed to create session.');
     } finally {
@@ -45,33 +70,38 @@ const CreateSessionModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Consultation Room" maxWidth="620px">
+    <Modal isOpen={isOpen} onClose={() => { reset(); onClose(); }} title="Create Consultation Room" maxWidth="620px">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div className="form-grid">
-          <div className="form-group">
-            <label className="form-label">Patient ID *</label>
-            <input required value={form.patientId} onChange={(e) => set('patientId', e.target.value)} placeholder="Patient UUID" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Doctor ID *</label>
-            <input required value={form.doctorId} onChange={(e) => set('doctorId', e.target.value)} placeholder="Doctor UUID" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Appointment ID</label>
-            <input value={form.appointmentId} onChange={(e) => set('appointmentId', e.target.value)} placeholder="Optional UUID" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Scheduled Time</label>
-            <input type="datetime-local" value={form.scheduledStartTime} onChange={(e) => set('scheduledStartTime', e.target.value)} />
-          </div>
+        <PatientIdLookup
+          onResolved={(p) => setForm((f) => ({ ...f, patientId: p.id, appointmentId: '', doctorId: '' }))}
+          onCleared={() => {
+            setForm((f) => ({ ...f, patientId: '', appointmentId: '', doctorId: '' }));
+            setAutoDoctor(null);
+          }}
+          onContext={applyContext}
+        />
+        <DoctorEmployeeLookup
+          key={form.patientId || 'no-patient'}
+          autoDoctor={autoDoctor}
+          onResolved={(d) => set('doctorId', d.id)}
+          onCleared={() => { set('doctorId', ''); setAutoDoctor(null); }}
+        />
+        <AppointmentSelect
+          patientUuid={form.patientId}
+          value={form.appointmentId}
+          onChange={handleAppointmentChange}
+        />
+        <div className="form-group">
+          <label className="form-label">Scheduled Time</label>
+          <input type="datetime-local" value={form.scheduledStartTime} onChange={(e) => set('scheduledStartTime', e.target.value)} />
         </div>
         <div className="form-group">
           <label className="form-label">Notes</label>
           <textarea rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Routine follow-up consultation" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button type="button" className="btn btn-secondary" onClick={() => { reset(); onClose(); }}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !form.patientId || !form.doctorId}>
             {loading ? 'Creating…' : 'Create Room'}
           </button>
         </div>
@@ -163,7 +193,10 @@ const SessionCard = ({ session, onAction }) => {
 
 /* ── Main Telemedicine Page ─────────────────────────────────────────────── */
 export default function Telemedicine() {
-  const { user } = useAuthStore();
+  const { user, hasAnyRole } = useAuthStore();
+  const isPatient = hasAnyRole(['PATIENT']);
+  const canCreate = hasAnyRole(['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST']);
+
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -171,7 +204,6 @@ export default function Telemedicine() {
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
-      // Try to load doctor's waiting room if user is a doctor
       const isDoctor = user?.roles?.some((r) => r === 'DOCTOR');
       let list = [];
 
@@ -215,15 +247,21 @@ export default function Telemedicine() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>Telemedicine & Virtual Rooms</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Virtual video consultation rooms, waiting queues, and meeting tokens</p>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {isPatient
+              ? 'Join your scheduled video consultations'
+              : 'Virtual video consultation rooms, waiting queues, and meeting tokens'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn btn-secondary" onClick={fetchSessions} title="Refresh">
             <RefreshCw size={18} />
           </button>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            <Video size={18} style={{ marginRight: '0.5rem' }} /> Create Consultation Room
-          </button>
+          {canCreate && (
+            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+              <Video size={18} style={{ marginRight: '0.5rem' }} /> Create Consultation Room
+            </button>
+          )}
         </div>
       </div>
 
@@ -236,7 +274,11 @@ export default function Telemedicine() {
         <div className="empty-state">
           <Video size={48} />
           <h3>No active sessions</h3>
-          <p>Create a consultation room to start a video visit.</p>
+          <p>
+            {isPatient
+              ? 'When staff schedule a video visit for you, it will show up here.'
+              : 'Create a consultation room to start a video visit.'}
+          </p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '1.5rem' }}>
@@ -246,7 +288,9 @@ export default function Telemedicine() {
         </div>
       )}
 
-      <CreateSessionModal isOpen={showCreate} onClose={() => setShowCreate(false)} onSuccess={fetchSessions} />
+      {canCreate && (
+        <CreateSessionModal isOpen={showCreate} onClose={() => setShowCreate(false)} onSuccess={fetchSessions} />
+      )}
     </div>
   );
 }

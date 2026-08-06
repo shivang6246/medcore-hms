@@ -3,30 +3,42 @@ import { Bed, Plus, UserPlus, ArrowRightLeft, LogOut, RefreshCw, CheckCircle } f
 import { ipdApi } from '../api/ipd.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
-import { validateUUIDs } from '../utils/uuid';
+import { PatientIdLookup, DoctorEmployeeLookup } from '../components/lookup/EntityLookups';
 
 /* ── Admit Patient Modal ────────────────────────────────────────────────── */
 const AdmitPatientModal = ({ isOpen, onClose, onSuccess, beds }) => {
   const [loading, setLoading] = useState(false);
+  const [autoDoctor, setAutoDoctor] = useState(null);
   const [form, setForm] = useState({
     patientId: '', doctorId: '', bedId: '',
     reason: '', expectedDischargeDate: '',
   });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const reset = () => {
+    setForm({
+      patientId: '', doctorId: '', bedId: '',
+      reason: '', expectedDischargeDate: '',
+    });
+    setAutoDoctor(null);
+  };
+
+  const applyContext = (ctx) => {
+    setForm((f) => ({ ...f, doctorId: ctx?.doctor?.id || '' }));
+    setAutoDoctor(ctx?.doctor || null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const uuidErr = validateUUIDs({
-      'Patient ID': form.patientId,
-      'Doctor ID': form.doctorId,
-    });
-    if (uuidErr) { toast.error(uuidErr); return; }
+    if (!form.patientId || !form.doctorId) {
+      toast.error('Look up patient and doctor first');
+      return;
+    }
     setLoading(true);
     try {
       await ipdApi.admitPatient({
-        patientId: form.patientId.trim(),
-        doctorId: form.doctorId.trim(),
+        patientId: form.patientId,
+        doctorId: form.doctorId,
         bedId: form.bedId,
         reason: form.reason,
         expectedDischargeDate: form.expectedDischargeDate || undefined,
@@ -34,7 +46,7 @@ const AdmitPatientModal = ({ isOpen, onClose, onSuccess, beds }) => {
       toast.success('Patient admitted successfully!');
       onSuccess();
       onClose();
-      setForm({ patientId: '', doctorId: '', bedId: '', reason: '', expectedDischargeDate: '' });
+      reset();
     } catch (err) {
       toast.error(err.response?.data?.message ?? err.response?.data?.detail ?? 'Failed to admit patient.');
     } finally {
@@ -43,17 +55,23 @@ const AdmitPatientModal = ({ isOpen, onClose, onSuccess, beds }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Admit Patient" maxWidth="640px">
+    <Modal isOpen={isOpen} onClose={() => { reset(); onClose(); }} title="Admit Patient" maxWidth="640px">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <PatientIdLookup
+          onResolved={(p) => setForm((f) => ({ ...f, patientId: p.id, doctorId: '' }))}
+          onCleared={() => {
+            setForm((f) => ({ ...f, patientId: '', doctorId: '' }));
+            setAutoDoctor(null);
+          }}
+          onContext={applyContext}
+        />
+        <DoctorEmployeeLookup
+          key={form.patientId || 'no-patient'}
+          autoDoctor={autoDoctor}
+          onResolved={(d) => set('doctorId', d.id)}
+          onCleared={() => { set('doctorId', ''); setAutoDoctor(null); }}
+        />
         <div className="form-grid">
-          <div className="form-group">
-            <label className="form-label">Patient ID *</label>
-            <input required value={form.patientId} onChange={(e) => set('patientId', e.target.value)} placeholder="Patient UUID" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Doctor ID *</label>
-            <input required value={form.doctorId} onChange={(e) => set('doctorId', e.target.value)} placeholder="Doctor UUID" />
-          </div>
           <div className="form-group">
             <label className="form-label">Bed *</label>
             <select required value={form.bedId} onChange={(e) => set('bedId', e.target.value)}>
@@ -75,8 +93,8 @@ const AdmitPatientModal = ({ isOpen, onClose, onSuccess, beds }) => {
           <textarea required rows={2} value={form.reason} onChange={(e) => set('reason', e.target.value)} placeholder="Post-surgical monitoring & oxygen therapy" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button type="button" className="btn btn-secondary" onClick={() => { reset(); onClose(); }}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || !form.patientId || !form.doctorId}>
             {loading ? 'Admitting…' : 'Admit Patient'}
           </button>
         </div>

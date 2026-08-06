@@ -80,7 +80,7 @@ public class DoctorController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden")
     })
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<PagedResponse<DoctorSummaryDto>>> getAllDoctors(
 
             @Parameter(description = "Page index (0-based)", example = "0")
@@ -98,6 +98,30 @@ public class DoctorController {
     }
 
     // -------------------------------------------------------------------------
+    // GET /api/doctors/by-employee-id/{employeeId} — Lookup by hospital employee ID
+    // -------------------------------------------------------------------------
+
+    @Operation(
+            summary = "Get doctor by employee ID",
+            description = "Looks up a doctor by hospital-scoped employee ID (e.g. EMP-DOC-001). Requires hospitalId query param."
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Doctor found"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Doctor not found")
+    })
+    @GetMapping("/by-employee-id/{employeeId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'NURSE', 'PATIENT')")
+    public ResponseEntity<ApiResponse<DoctorResponseDto>> getDoctorByEmployeeId(
+            @Parameter(description = "Hospital-scoped employee ID, e.g. EMP-DOC-001", required = true)
+            @PathVariable String employeeId,
+            @Parameter(description = "Hospital UUID for scoping", required = true)
+            @RequestParam UUID hospitalId) {
+        log.debug("Fetching doctor by employeeId: {} in hospital: {}", employeeId, hospitalId);
+        return ResponseEntity.ok(ApiResponse.success(
+                doctorService.getDoctorByEmployeeId(employeeId, hospitalId), "Doctor fetched successfully"));
+    }
+
+    // -------------------------------------------------------------------------
     // GET /api/doctors/{id} — Doctor detail
     // -------------------------------------------------------------------------
 
@@ -112,7 +136,7 @@ public class DoctorController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<DoctorResponseDto>> getDoctorById(
             @Parameter(description = "UUID of the doctor", required = true)
             @PathVariable UUID id) {

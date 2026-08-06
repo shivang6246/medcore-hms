@@ -76,7 +76,7 @@ function App() {
           {/* Patient access */}
           <Route
             path="/patients"
-            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE']} />}
+            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']} />}
           >
             <Route index element={<PatientList />} />
           </Route>
@@ -93,7 +93,7 @@ function App() {
           {/* Doctor access */}
           <Route
             path="/doctors"
-            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR']} />}
+            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PATIENT']} />}
           >
             <Route index element={<DoctorList />} />
             <Route path=":id" element={<DoctorDetail />} />

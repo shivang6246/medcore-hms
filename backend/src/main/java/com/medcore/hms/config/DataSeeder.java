@@ -6,6 +6,11 @@ import com.medcore.hms.department.repository.DepartmentRepository;
 import com.medcore.hms.doctor.entity.Doctor;
 import com.medcore.hms.doctor.entity.Gender;
 import com.medcore.hms.doctor.repository.DoctorRepository;
+import com.medcore.hms.doctor.schedule.entity.DayOfWeek;
+import com.medcore.hms.doctor.schedule.entity.DoctorSchedule;
+import com.medcore.hms.doctor.schedule.repository.DoctorScheduleRepository;
+import com.medcore.hms.doctor.slot.dto.GenerateSlotsRequestDto;
+import com.medcore.hms.doctor.slot.service.DoctorSlotService;
 import com.medcore.hms.hospital.entity.Hospital;
 import com.medcore.hms.hospital.repository.HospitalRepository;
 import com.medcore.hms.patient.entity.BloodGroup;
@@ -27,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +47,8 @@ import java.util.Set;
  *   2. 1 sample hospital
  *   3. 10 core departments
  *   4. 2 sample doctors
+ *   5. Weekly schedules + upcoming slots for sample doctors
+ *   6. Sample patients (+ PATIENT login)
  */
 @Slf4j
 @Component
@@ -53,6 +61,8 @@ public class DataSeeder implements ApplicationRunner {
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
+    private final DoctorScheduleRepository doctorScheduleRepository;
+    private final DoctorSlotService doctorSlotService;
     private final PatientRepository patientRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -65,6 +75,7 @@ public class DataSeeder implements ApplicationRunner {
         seedDepartments(hospital);
         seedSuperAdminUser(hospital);
         seedSampleDoctors(hospital);
+        seedDoctorSchedulesAndSlots(hospital);
         seedSamplePatients(hospital);
         log.info("========== MedCore DataSeeder Complete ==========");
     }
@@ -235,6 +246,41 @@ public class DataSeeder implements ApplicationRunner {
         log.info("✅ Sample doctors seeded for hospital '{}'", hospital.getName());
     }
 
+    private void seedDoctorSchedulesAndSlots(Hospital hospital) {
+        List<DayOfWeek> weekdays = List.of(
+                DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY
+        );
+
+        List<Doctor> doctors = doctorRepository.findByHospital_Id(hospital.getId());
+
+        for (Doctor doctor : doctors) {
+            int created = 0;
+            for (DayOfWeek day : weekdays) {
+                if (doctorScheduleRepository.existsByDoctor_IdAndDayOfWeek(doctor.getId(), day)) {
+                    continue;
+                }
+                doctorScheduleRepository.save(DoctorSchedule.builder()
+                        .doctor(doctor)
+                        .dayOfWeek(day)
+                        .startTime(LocalTime.of(9, 0))
+                        .endTime(LocalTime.of(17, 0))
+                        .lunchBreakStart(LocalTime.of(13, 0))
+                        .lunchBreakEnd(LocalTime.of(14, 0))
+                        .slotDurationMinutes(30)
+                        .isActive(true)
+                        .build());
+                created++;
+            }
+
+            LocalDate from = LocalDate.now();
+            LocalDate to = from.plusDays(13);
+            var slots = doctorSlotService.generateSlots(doctor.getId(), new GenerateSlotsRequestDto(from, to));
+            log.info("✅ Schedules/slots for {}: {} schedule rows added, {} slots in next 14 days",
+                    doctor.getEmail(), created, slots.size());
+        }
+    }
+
     private void seedDoctor(
             Hospital hospital, Department department, Role doctorRole,
             String email, String firstName, String lastName,
@@ -315,6 +361,49 @@ public class DataSeeder implements ApplicationRunner {
         );
 
         log.info("✅ Sample patients seeded for hospital '{}'", hospital.getName());
+        seedPatientUserAccounts(hospital);
+    }
+
+    private void seedPatientUserAccounts(Hospital hospital) {
+        Role patientRole = roleRepository.findByName(RoleName.PATIENT)
+                .orElseThrow(() -> new IllegalStateException("PATIENT role not found"));
+
+        seedPatientUser(
+                hospital, patientRole,
+                "aanya.mehta@example.com",
+                "Aanya", "Mehta",
+                "+91-9811223344",
+                "Patient@123!"
+        );
+    }
+
+    private void seedPatientUser(
+            Hospital hospital, Role patientRole,
+            String email, String firstName, String lastName, String phone, String rawPassword) {
+        userRepository.findByEmail(email).ifPresentOrElse(
+                user -> {
+                    user.setRoles(new HashSet<>(Set.of(patientRole)));
+                    user.setIsActive(true);
+                    user.setIsEmailVerified(true);
+                    user.setHospital(hospital);
+                    userRepository.save(user);
+                    log.info("✅ Ensured PATIENT login for existing user: {}", email);
+                },
+                () -> {
+                    userRepository.save(User.builder()
+                            .hospital(hospital)
+                            .firstName(firstName)
+                            .lastName(lastName)
+                            .email(email)
+                            .passwordHash(passwordEncoder.encode(rawPassword))
+                            .phone(phone)
+                            .isActive(true)
+                            .isEmailVerified(true)
+                            .roles(new HashSet<>(Set.of(patientRole)))
+                            .build());
+                    log.info("✅ PATIENT user seeded: {} / {}", email, rawPassword);
+                }
+        );
     }
 
     private void seedPatient(

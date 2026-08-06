@@ -18,6 +18,8 @@ public interface DoctorService {
 
     DoctorResponseDto getDoctorById(UUID id);
 
+    DoctorResponseDto getDoctorByEmployeeId(String employeeId, UUID hospitalId);
+
     PagedResponse<DoctorSummaryDto> getAllDoctors(Pageable pageable);
 
     DoctorResponseDto getDoctorByUserId(UUID userId);

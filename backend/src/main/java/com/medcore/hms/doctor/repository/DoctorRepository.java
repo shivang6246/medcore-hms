@@ -36,6 +36,8 @@ public interface DoctorRepository extends JpaRepository<Doctor, UUID> {
 
     List<Doctor> findBySpecializationContainingIgnoreCase(String specialization);
 
+    Optional<Doctor> findByEmployeeIdAndHospital_Id(String employeeId, UUID hospitalId);
+
     boolean existsByEmail(String email);
 
     boolean existsByLicenseNumber(String licenseNumber);

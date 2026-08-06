@@ -16,6 +16,8 @@ public interface PatientService {
 
     PatientResponseDto getPatientByPatientId(String patientId, UUID hospitalId);
 
+    PatientResponseDto getPatientByEmail(String email);
+
     PagedResponse<PatientSummaryDto> getAllPatients(UUID hospitalId, Pageable pageable);
 
     PagedResponse<PatientSummaryDto> searchPatients(PatientSearchCriteria criteria, Pageable pageable);

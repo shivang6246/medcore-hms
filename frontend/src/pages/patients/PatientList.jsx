@@ -21,10 +21,18 @@ const PatientFormModal = ({ isOpen, onClose, onSuccess }) => {
     insuranceProvider: '', insurancePolicyNumber: '', allergies: '', medicalHistory: '',
   });
 
+  useEffect(() => {
+    if (user?.hospitalId) setForm((f) => ({ ...f, hospitalId: user.hospitalId }));
+  }, [user?.hospitalId, isOpen]);
+
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.hospitalId) {
+      toast.error('Your account has no hospital assigned. Re-login as hospital staff.');
+      return;
+    }
     setLoading(true);
     try {
       await patientApi.create(form);
@@ -81,8 +89,15 @@ const PatientFormModal = ({ isOpen, onClose, onSuccess }) => {
             <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="patient@email.com" />
           </div>
           <div className="form-group">
-            <label className="form-label">Hospital ID *</label>
-            <input required value={form.hospitalId} onChange={(e) => set('hospitalId', e.target.value)} placeholder="UUID" />
+            <label className="form-label">Hospital</label>
+            <input
+              readOnly
+              value={form.hospitalId ? (user?.hospitalName || 'Current hospital') : ''}
+              placeholder="Uses your hospital"
+            />
+            {!form.hospitalId && (
+              <span className="form-error">Re-login so your account has a hospital assigned</span>
+            )}
           </div>
         </div>
 

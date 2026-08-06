@@ -4,7 +4,7 @@ import { pharmacyApi } from '../api/pharmacy.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
 import useAuthStore from '../store/authStore';
-import { validateUUIDs } from '../utils/uuid';
+import { PatientIdLookup } from '../components/lookup/EntityLookups';
 
 /* ── Add Medicine Stock Modal ──────────────────────────────────────────── */
 const AddStockModal = ({ isOpen, onClose, onSuccess, medicines }) => {
@@ -99,12 +99,14 @@ const DispenseModal = ({ isOpen, onClose, onSuccess, medicines }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const uuidErr = validateUUIDs({ 'Patient ID': form.patientId });
-    if (uuidErr) { toast.error(uuidErr); return; }
+    if (!form.patientId) {
+      toast.error('Look up a patient first');
+      return;
+    }
     setLoading(true);
     try {
       await pharmacyApi.dispense({
-        patientId: form.patientId.trim(),
+        patientId: form.patientId,
         remarks: form.remarks || undefined,
         items: items.map((it) => ({ medicineId: it.medicineId, quantity: parseInt(it.quantity, 10) })),
       });
@@ -123,10 +125,10 @@ const DispenseModal = ({ isOpen, onClose, onSuccess, medicines }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Dispense Medicine" maxWidth="650px">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div className="form-group">
-          <label className="form-label">Patient ID *</label>
-          <input required value={form.patientId} onChange={(e) => set('patientId', e.target.value)} placeholder="Patient UUID" />
-        </div>
+        <PatientIdLookup
+          onResolved={(p) => set('patientId', p.id)}
+          onCleared={() => set('patientId', '')}
+        />
 
         <label className="form-label" style={{ fontWeight: 600 }}>Medicines to Dispense</label>
         {items.map((item, idx) => (

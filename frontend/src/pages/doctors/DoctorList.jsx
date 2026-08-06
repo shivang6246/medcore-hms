@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Stethoscope, Plus, Eye, ToggleLeft, ToggleRight, RefreshCw, DollarSign } from 'lucide-react';
 import { doctorApi } from '../../api/doctor.api';
+import { departmentApi } from '../../api/department.api';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Card from '../../components/ui/Card';
@@ -19,11 +20,27 @@ const DoctorFormModal = ({ isOpen, onClose, onSuccess }) => {
     gender: '', experienceYears: '',
   });
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
   const { user } = useAuthStore();
 
   useEffect(() => {
     if (user?.hospitalId) setForm((f) => ({ ...f, hospitalId: user.hospitalId }));
   }, [user]);
+
+  useEffect(() => {
+    if (!isOpen || !user?.hospitalId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await departmentApi.getByHospital(user.hospitalId);
+        const list = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+        if (!cancelled) setDepartments(list);
+      } catch {
+        if (!cancelled) setDepartments([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, user?.hospitalId]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -86,12 +103,24 @@ const DoctorFormModal = ({ isOpen, onClose, onSuccess }) => {
             <input required value={form.employeeId} onChange={(e) => set('employeeId', e.target.value)} placeholder="EMP-001" />
           </div>
           <div className="form-group">
-            <label className="form-label">Hospital ID *</label>
-            <input required value={form.hospitalId} onChange={(e) => set('hospitalId', e.target.value)} placeholder="UUID" />
+            <label className="form-label">Hospital</label>
+            <input
+              readOnly
+              value={form.hospitalId ? (user?.hospitalName || 'Current hospital') : ''}
+              placeholder="Uses your hospital"
+            />
+            {!form.hospitalId && (
+              <span className="form-error">Re-login so your account has a hospital assigned</span>
+            )}
           </div>
           <div className="form-group">
-            <label className="form-label">Department ID</label>
-            <input value={form.departmentId} onChange={(e) => set('departmentId', e.target.value)} placeholder="UUID (optional)" />
+            <label className="form-label">Department</label>
+            <select value={form.departmentId} onChange={(e) => set('departmentId', e.target.value)}>
+              <option value="">Select department (optional)</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
           </div>
           <div className="form-group">
             <label className="form-label">Consultation Fee (₹)</label>

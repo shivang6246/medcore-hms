@@ -6,8 +6,8 @@ import com.medcore.hms.auth.dto.MessageResponseDto;
 import com.medcore.hms.auth.dto.PendingRegistrationDto;
 import com.medcore.hms.auth.dto.RegisterRequestDto;
 import com.medcore.hms.auth.jwt.JwtService;
-import com.medcore.hms.auth.util.DuplicateEmailException;
 import com.medcore.hms.email.service.EmailService;
+import com.medcore.hms.patient.repository.PatientRepository;
 import com.medcore.hms.role.entity.Role;
 import com.medcore.hms.role.entity.RoleName;
 import com.medcore.hms.role.repository.RoleRepository;
@@ -69,6 +69,12 @@ class AuthServiceTest {
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
+    @Mock
+    private PatientRepository patientRepository;
+
+    @Mock
+    private RoleProfileProvisioner roleProfileProvisioner;
+
     @InjectMocks
     private AuthService authService;
 
@@ -101,19 +107,6 @@ class AuthServiceTest {
     }
 
     @Test
-    void register_ShouldThrowException_WhenEmailAlreadyVerified() {
-        RegisterRequestDto dto = new RegisterRequestDto(
-                "John", "Doe", "john.doe@example.com", "password123", "1234567890", "PATIENT"
-        );
-        User verifiedUser = User.builder().email(dto.email()).isEmailVerified(true).build();
-
-        when(userRepository.findByEmail(dto.email())).thenReturn(Optional.of(verifiedUser));
-
-        assertThrows(DuplicateEmailException.class, () -> authService.register(dto));
-        verify(userRepository, never()).save(any());
-    }
-
-    @Test
     void verifyEmail_ShouldCreateUserInDB_WhenPendingRegistrationExists() throws Exception {
         String email = "john.doe@example.com";
         String otp = "123456";
@@ -126,6 +119,7 @@ class AuthServiceTest {
         when(valueOperations.get("pending_register::" + email)).thenReturn(pendingJson);
         Role patientRole = Role.builder().name(RoleName.PATIENT).description("Patient role").build();
         when(roleRepository.findByName(RoleName.PATIENT)).thenReturn(Optional.of(patientRole));
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
         User savedUser = User.builder()
                 .firstName("John")
@@ -149,9 +143,31 @@ class AuthServiceTest {
         assertEquals("jwt-token", response.token());
         assertEquals("refresh-token", response.refreshToken());
 
-        verify(otpService).verifyOtp(email, otp);
+        verify(otpService).assertOtpValid(email, otp);
+        verify(otpService).consumeOtp(email);
         verify(userRepository).save(any(User.class));
+        verify(roleProfileProvisioner).ensureProfiles(savedUser);
         verify(redisTemplate).delete("pending_register::" + email);
         verify(emailService).sendWelcomeEmail(email, "John");
+    }
+
+    @Test
+    void register_ShouldAllowOtpFlow_WhenEmailAlreadyVerified() {
+        RegisterRequestDto dto = new RegisterRequestDto(
+                "John", "Doe", "john.doe@example.com", "password123", "1234567890", "PATIENT"
+        );
+        User verifiedUser = User.builder().email(dto.email()).isEmailVerified(true).build();
+
+        when(userRepository.findByEmail(dto.email())).thenReturn(Optional.of(verifiedUser));
+        Role role = Role.builder().name(RoleName.PATIENT).description("Patient role").build();
+        when(roleRepository.findByName(RoleName.PATIENT)).thenReturn(Optional.of(role));
+        when(passwordEncoder.encode(dto.password())).thenReturn("encodedPassword");
+        when(otpService.generateOtp()).thenReturn("123456");
+
+        MessageResponseDto response = authService.register(dto);
+
+        assertTrue(response.message().contains("Verification code sent"));
+        verify(otpService).saveOtp("john.doe@example.com", "123456");
+        verify(userRepository, never()).delete(any());
     }
 }

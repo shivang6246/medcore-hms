@@ -59,6 +59,9 @@ const VerifyEmail = () => {
     } catch (err) {
       const msg = err.response?.data?.detail ?? err.response?.data?.message ?? 'Invalid or expired OTP.';
       toast.error(msg);
+      if (err.response?.status === 410) {
+        toast('Click Resend OTP to get a new code.', { icon: 'ℹ️' });
+      }
     } finally {
       setLoading(false);
     }
@@ -69,9 +72,10 @@ const VerifyEmail = () => {
     setResending(true);
     try {
       await authApi.resendOtp({ email });
-      toast.success('OTP resent! Check your inbox.');
+      toast.success('OTP resent! Check your inbox (valid 15 minutes).');
     } catch (err) {
-      toast.error('Failed to resend OTP.');
+      const msg = err.response?.data?.detail ?? err.response?.data?.message ?? 'Failed to resend OTP. Register again if the session expired.';
+      toast.error(msg);
     } finally {
       setResending(false);
     }
@@ -100,7 +104,7 @@ const VerifyEmail = () => {
             Verify Email
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}>
-            We sent a 6-digit OTP to your email.<br />Enter it below to activate your account.
+            We sent a 6-digit OTP to your email.<br />Enter it within 15 minutes to activate your account.
           </p>
         </div>
 

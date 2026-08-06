@@ -34,7 +34,11 @@ public class OtpService {
         log.debug("OTP saved for: {} (expires in {} min)", email, expirationMinutes);
     }
 
-    public void verifyOtp(String email, String submittedOtp) {
+    /**
+     * Checks the OTP is present and matches without consuming it.
+     * Call {@link #consumeOtp(String)} only after the protected action succeeds.
+     */
+    public void assertOtpValid(String email, String submittedOtp) {
         String stored = redisTemplate.opsForValue().get(key(email));
         if (stored == null) {
             throw new OtpExpiredException();
@@ -42,7 +46,16 @@ public class OtpService {
         if (!stored.equals(submittedOtp)) {
             throw new OtpMismatchException();
         }
+    }
+
+    public void consumeOtp(String email) {
         deleteOtp(email);
+    }
+
+    /** @deprecated Prefer {@link #assertOtpValid} + {@link #consumeOtp} so failures can retry. */
+    public void verifyOtp(String email, String submittedOtp) {
+        assertOtpValid(email, submittedOtp);
+        consumeOtp(email);
     }
 
     public String resendOtp(String email) {

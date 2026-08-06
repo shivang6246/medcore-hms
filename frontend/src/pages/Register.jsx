@@ -15,22 +15,15 @@ const schema = z.object({
   phone: z.string().max(20).optional(),
   password: z.string().min(8, 'Password must be at least 8 characters').max(100),
   confirmPassword: z.string(),
-  roleName: z.string().optional(),
+  roleName: z.enum(['PATIENT', 'DOCTOR']),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
 });
 
 const ROLES = [
-  { value: '', label: 'Select role (defaults to Patient)' },
   { value: 'PATIENT', label: 'Patient' },
   { value: 'DOCTOR', label: 'Doctor' },
-  { value: 'NURSE', label: 'Nurse' },
-  { value: 'RECEPTIONIST', label: 'Receptionist' },
-  { value: 'PHARMACIST', label: 'Pharmacist' },
-  { value: 'LAB_TECHNICIAN', label: 'Lab Technician' },
-  { value: 'DEPARTMENT_HEAD', label: 'Department Head' },
-  { value: 'HOSPITAL_ADMIN', label: 'Hospital Admin' },
 ];
 
 const Register = () => {
@@ -40,6 +33,7 @@ const Register = () => {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
+    defaultValues: { roleName: 'PATIENT' },
   });
 
   const onSubmit = async (data) => {
@@ -50,7 +44,7 @@ const Register = () => {
         email: data.email,
         password: data.password,
         phone: data.phone || undefined,
-        roleName: data.roleName || undefined,
+        roleName: data.roleName || 'PATIENT',
       };
       await authApi.register(payload);
       toast.success('Registered! Check your email for the OTP.');
@@ -135,12 +129,15 @@ const Register = () => {
 
             {/* Role */}
             <div className="form-group">
-              <label className="form-label" htmlFor="reg-role">Role</label>
+              <label className="form-label" htmlFor="reg-role">I am registering as</label>
               <select id="reg-role" {...register('roleName')}>
                 {ROLES.map((r) => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
+              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginTop: '0.35rem', display: 'block' }}>
+                Creates a login plus a matching patient or doctor profile. Staff roles are assigned by admins.
+              </span>
             </div>
           </div>
 

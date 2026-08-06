@@ -18,6 +18,7 @@ import com.medcore.hms.email.service.EmailService;
 import com.medcore.hms.role.entity.Role;
 import com.medcore.hms.role.entity.RoleName;
 import com.medcore.hms.role.repository.RoleRepository;
+import com.medcore.hms.patient.repository.PatientRepository;
 import com.medcore.hms.user.entity.User;
 import com.medcore.hms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -65,6 +67,8 @@ public class AuthService {
     private final EmailService emailService;
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final PatientRepository patientRepository;
+    private final RoleProfileProvisioner roleProfileProvisioner;
 
     // -------------------------------------------------------------------------
     // Register
@@ -72,25 +76,19 @@ public class AuthService {
 
     /**
      * Initiates registration by saving pending details in Redis and sending a verification OTP.
-     * User record is NOT created in DB until OTP is verified.
-     *
-     * @throws DuplicateEmailException if the email is already registered and verified
+     * User record is created/updated in DB only after OTP is verified.
+     * Re-registering an existing verified email sends a new OTP and updates the password on verify.
      */
     @Transactional
     public MessageResponseDto register(RegisterRequestDto dto) {
         User existingUser = userRepository.findByEmail(dto.email()).orElse(null);
-        if (existingUser != null) {
-            if (Boolean.TRUE.equals(existingUser.getIsEmailVerified())) {
-                throw new DuplicateEmailException(dto.email());
-            } else {
-                // Delete legacy unverified user record from DB to allow fresh registration
-                userRepository.delete(existingUser);
-                userRepository.flush();
-            }
+        if (existingUser != null && !Boolean.TRUE.equals(existingUser.getIsEmailVerified())) {
+            // Remove incomplete signup so a fresh pending registration can complete
+            userRepository.delete(existingUser);
+            userRepository.flush();
         }
 
-        RoleName requestedRole = resolveRoleName(dto.roleName());
-        // Validate role exists
+        RoleName requestedRole = resolvePublicRegisterRole(dto.roleName());
         roleRepository.findByName(requestedRole)
                 .orElseThrow(() -> new IllegalStateException(
                         "Role " + requestedRole + " not found. Run DataSeeder first."));
@@ -119,7 +117,7 @@ public class AuthService {
         log.info("Pending registration created & OTP sent for email: {}", dto.email());
 
         return new MessageResponseDto(
-                "Verification code sent to " + dto.email() + ". Please verify OTP to complete registration.");
+                "Verification code sent to " + dto.email() + ". Please verify OTP within 15 minutes to complete registration.");
     }
 
     // -------------------------------------------------------------------------
@@ -146,6 +144,11 @@ public class AuthService {
 
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
+        try {
+            roleProfileProvisioner.ensureProfiles(user);
+        } catch (Exception ex) {
+            log.warn("Role profile backfill failed for {}: {}", user.getEmail(), ex.getMessage());
+        }
         log.info("User logged in: {}", user.getEmail());
 
         return buildAuthResponse(user);
@@ -153,7 +156,8 @@ public class AuthService {
 
     @Transactional
     public AuthResponseDto verifyEmail(String email, String otp) {
-        otpService.verifyOtp(email, otp);
+        // Validate without consuming — so a later failure can still be retried with the same OTP
+        otpService.assertOtpValid(email, otp);
 
         String pendingJson = redisTemplate.opsForValue().get(PENDING_REGISTER_PREFIX + email);
         User user;
@@ -165,20 +169,35 @@ public class AuthService {
                 Role role = roleRepository.findByName(requestedRole)
                         .orElseThrow(() -> new IllegalStateException("Role " + requestedRole + " not found."));
 
-                user = User.builder()
-                        .firstName(pendingDto.firstName())
-                        .lastName(pendingDto.lastName())
-                        .email(pendingDto.email())
-                        .passwordHash(pendingDto.passwordHash())
-                        .phone(pendingDto.phone())
-                        .roles(new HashSet<>(Set.of(role)))
-                        .isActive(true)
-                        .isEmailVerified(true)
-                        .build();
+                user = userRepository.findByEmail(email).orElse(null);
+                if (user == null) {
+                    user = User.builder()
+                            .firstName(pendingDto.firstName())
+                            .lastName(pendingDto.lastName())
+                            .email(pendingDto.email())
+                            .passwordHash(pendingDto.passwordHash())
+                            .phone(pendingDto.phone())
+                            .roles(new HashSet<>(Set.of(role)))
+                            .isActive(true)
+                            .isEmailVerified(true)
+                            .build();
+                } else {
+                    // Existing account (re-register / password update via OTP)
+                    user.setFirstName(pendingDto.firstName());
+                    user.setLastName(pendingDto.lastName());
+                    user.setPasswordHash(pendingDto.passwordHash());
+                    user.setPhone(pendingDto.phone());
+                    user.setRoles(new HashSet<>(Set.of(role)));
+                    user.setIsActive(true);
+                    user.setIsEmailVerified(true);
+                    user.setDeletedAt(null);
+                }
 
                 user = userRepository.save(user);
+                roleProfileProvisioner.ensureProfiles(user);
                 redisTemplate.delete(PENDING_REGISTER_PREFIX + email);
-                log.info("Registration completed and user created in DB: {}", user.getEmail());
+                otpService.consumeOtp(email);
+                log.info("Registration completed for: {}", user.getEmail());
             } catch (JsonProcessingException e) {
                 log.error("Failed to deserialize pending registration for {}", email, e);
                 throw new RuntimeException("Error completing registration", e);
@@ -195,12 +214,14 @@ public class AuthService {
             user.setIsEmailVerified(true);
             user.setIsActive(true);
             user = userRepository.save(user);
+            roleProfileProvisioner.ensureProfiles(user);
+            otpService.consumeOtp(email);
             log.info("Legacy email verified for: {}", email);
         }
 
+        AuthResponseDto response = buildAuthResponse(user);
         emailService.sendWelcomeEmail(email, user.getFirstName());
-
-        return buildAuthResponse(user);
+        return response;
     }
 
     public MessageResponseDto resendOtp(String email) {
@@ -297,6 +318,10 @@ public class AuthService {
                 .map(r -> r.getName().name())
                 .collect(Collectors.toSet());
 
+        UUID patientId = patientRepository.findByEmail(email)
+                .map(p -> p.getId())
+                .orElse(null);
+
         return new MeResponseDto(
                 user.getId(),
                 user.getFirstName(),
@@ -306,12 +331,26 @@ public class AuthService {
                 roleNames,
                 user.getIsActive(),
                 user.getHospital() != null ? user.getHospital().getId() : null,
-                user.getHospital() != null ? user.getHospital().getName() : null);
+                user.getHospital() != null ? user.getHospital().getName() : null,
+                patientId);
     }
 
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Public self-registration is limited to PATIENT and DOCTOR.
+     * Staff/admin accounts must be created by hospital admins / seeders.
+     */
+    private RoleName resolvePublicRegisterRole(String roleName) {
+        RoleName resolved = resolveRoleName(roleName);
+        if (resolved != RoleName.PATIENT && resolved != RoleName.DOCTOR) {
+            throw new IllegalArgumentException(
+                    "Self-registration is only allowed for PATIENT or DOCTOR. Other roles must be assigned by an admin.");
+        }
+        return resolved;
+    }
 
     private RoleName resolveRoleName(String roleName) {
         if (roleName == null || roleName.isBlank()) {
