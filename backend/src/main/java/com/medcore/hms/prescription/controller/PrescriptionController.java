@@ -59,7 +59,7 @@ public class PrescriptionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Prescription not found")
     })
     @GetMapping("/api/prescriptions/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'PHARMACIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<PrescriptionResponseDto>> getPrescriptionById(
             @Parameter(description = "Prescription UUID", required = true) @PathVariable UUID id) {
         log.info("REST request to fetch prescription ID: {}", id);
@@ -75,7 +75,7 @@ public class PrescriptionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Medical record not found")
     })
     @GetMapping("/api/medical-records/{id}/prescriptions")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'PHARMACIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<PagedResponse<PrescriptionSummaryDto>>> getPrescriptionsByMedicalRecord(
             @Parameter(description = "Medical Record UUID", required = true) @PathVariable("id") UUID medicalRecordId,
             @RequestParam(defaultValue = "0") int page,
@@ -89,7 +89,7 @@ public class PrescriptionController {
 
     @Operation(summary = "Get list of all prescriptions for a Medical Record")
     @GetMapping("/api/medical-records/{id}/prescriptions/all")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'PHARMACIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<List<PrescriptionResponseDto>>> getPrescriptionListByMedicalRecord(
             @Parameter(description = "Medical Record UUID", required = true) @PathVariable("id") UUID medicalRecordId) {
         log.info("REST request to fetch full prescription list for medical record ID: {}", medicalRecordId);

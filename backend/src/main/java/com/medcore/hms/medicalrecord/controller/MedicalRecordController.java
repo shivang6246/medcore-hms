@@ -111,7 +111,7 @@ public class MedicalRecordController {
 
     @Operation(summary = "List all medical records (paginated)")
     @GetMapping("/api/medical-records")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE')")
     public ResponseEntity<ApiResponse<PagedResponse<MedicalRecordSummaryDto>>> getAllMedicalRecords(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
