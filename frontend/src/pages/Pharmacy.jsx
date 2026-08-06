@@ -4,6 +4,7 @@ import { pharmacyApi } from '../api/pharmacy.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
 import useAuthStore from '../store/authStore';
+import { validateUUIDs } from '../utils/uuid';
 
 /* ── Add Medicine Stock Modal ──────────────────────────────────────────── */
 const AddStockModal = ({ isOpen, onClose, onSuccess, medicines }) => {
@@ -98,10 +99,12 @@ const DispenseModal = ({ isOpen, onClose, onSuccess, medicines }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const uuidErr = validateUUIDs({ 'Patient ID': form.patientId });
+    if (uuidErr) { toast.error(uuidErr); return; }
     setLoading(true);
     try {
       await pharmacyApi.dispense({
-        patientId: form.patientId,
+        patientId: form.patientId.trim(),
         remarks: form.remarks || undefined,
         items: items.map((it) => ({ medicineId: it.medicineId, quantity: parseInt(it.quantity, 10) })),
       });

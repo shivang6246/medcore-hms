@@ -3,6 +3,7 @@ import { Bed, Plus, UserPlus, ArrowRightLeft, LogOut, RefreshCw, CheckCircle } f
 import { ipdApi } from '../api/ipd.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
+import { validateUUIDs } from '../utils/uuid';
 
 /* ── Admit Patient Modal ────────────────────────────────────────────────── */
 const AdmitPatientModal = ({ isOpen, onClose, onSuccess, beds }) => {
@@ -16,11 +17,16 @@ const AdmitPatientModal = ({ isOpen, onClose, onSuccess, beds }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const uuidErr = validateUUIDs({
+      'Patient ID': form.patientId,
+      'Doctor ID': form.doctorId,
+    });
+    if (uuidErr) { toast.error(uuidErr); return; }
     setLoading(true);
     try {
       await ipdApi.admitPatient({
-        patientId: form.patientId,
-        doctorId: form.doctorId,
+        patientId: form.patientId.trim(),
+        doctorId: form.doctorId.trim(),
         bedId: form.bedId,
         reason: form.reason,
         expectedDischargeDate: form.expectedDischargeDate || undefined,

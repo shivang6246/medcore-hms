@@ -3,6 +3,7 @@ import { FlaskConical, RefreshCw, Plus, Clock, CheckCircle2 } from 'lucide-react
 import { labApi } from '../api/lab.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
+import { validateUUIDs } from '../utils/uuid';
 
 const PRIORITIES = ['NORMAL', 'URGENT', 'STAT'];
 
@@ -18,12 +19,18 @@ const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const uuidErr = validateUUIDs({
+      'Patient ID': form.patientId,
+      'Doctor ID': form.doctorId,
+      ...(form.appointmentId ? { 'Appointment ID': form.appointmentId } : {}),
+    });
+    if (uuidErr) { toast.error(uuidErr); return; }
     setLoading(true);
     try {
       await labApi.createTest({
-        patientId: form.patientId,
-        doctorId: form.doctorId,
-        appointmentId: form.appointmentId || undefined,
+        patientId: form.patientId.trim(),
+        doctorId: form.doctorId.trim(),
+        appointmentId: form.appointmentId?.trim() || undefined,
         testType: form.testType,
         priority: form.priority,
         instructions: form.instructions || undefined,

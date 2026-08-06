@@ -3,6 +3,7 @@ import { CreditCard, Plus, RefreshCw, DollarSign, Trash2 } from 'lucide-react';
 import { billingApi } from '../api/billing.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
+import { validateUUIDs } from '../utils/uuid';
 
 const ITEM_CATEGORIES = ['CONSULTATION', 'LAB_TEST', 'PHARMACY', 'ADMISSION', 'OTHER'];
 
@@ -22,10 +23,12 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const uuidErr = validateUUIDs({ 'Patient ID': form.patientId });
+    if (uuidErr) { toast.error(uuidErr); return; }
     setLoading(true);
     try {
       await billingApi.createInvoice({
-        patientId: form.patientId,
+        patientId: form.patientId.trim(),
         issueDate: form.issueDate,
         dueDate: form.dueDate || undefined,
         taxAmount: parseFloat(form.taxAmount) || 0,

@@ -3,6 +3,7 @@ import { Pill, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { prescriptionApi } from '../api/prescription.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
+import { isValidUUID, validateUUIDs } from '../utils/uuid';
 
 /* ── New Prescription Modal ────────────────────────────────────────────── */
 const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
@@ -16,10 +17,14 @@ const NewPrescriptionModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isValidUUID(form.medicalRecordId)) {
+      toast.error('Medical Record ID must be a valid UUID (e.g. 3a8f1c7d-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
+      return;
+    }
     setLoading(true);
     try {
       await prescriptionApi.create({
-        medicalRecordId: form.medicalRecordId,
+        medicalRecordId: form.medicalRecordId.trim(),
         medicineName: form.medicineName,
         dosage: form.dosage,
         frequency: form.frequency,
@@ -90,6 +95,10 @@ const SearchModal = ({ isOpen, onClose, onResults }) => {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!medicalRecordId.trim()) return;
+    if (!isValidUUID(medicalRecordId)) {
+      toast.error('Medical Record ID must be a valid UUID (e.g. 3a8f1c7d-xxxx-xxxx-xxxx-xxxxxxxxxxxx)');
+      return;
+    }
     setLoading(true);
     try {
       const res = await prescriptionApi.getByMedicalRecord(medicalRecordId.trim(), { page: 0, size: 50 });

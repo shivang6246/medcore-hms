@@ -4,6 +4,7 @@ import { medicalRecordApi } from '../api/medicalRecord.api';
 import toast from 'react-hot-toast';
 import Modal from '../components/ui/Modal';
 import useAuthStore from '../store/authStore';
+import { validateUUIDs } from '../utils/uuid';
 
 /* ── Create Medical Record Modal ────────────────────────────────────────── */
 const CreateRecordModal = ({ isOpen, onClose, onSuccess }) => {
@@ -17,12 +18,18 @@ const CreateRecordModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const uuidErr = validateUUIDs({
+      'Patient ID': form.patientId,
+      'Doctor ID': form.doctorId,
+      ...(form.appointmentId ? { 'Appointment ID': form.appointmentId } : {}),
+    });
+    if (uuidErr) { toast.error(uuidErr); return; }
     setLoading(true);
     try {
       await medicalRecordApi.create({
-        patientId: form.patientId,
-        doctorId: form.doctorId,
-        appointmentId: form.appointmentId || undefined,
+        patientId: form.patientId.trim(),
+        doctorId: form.doctorId.trim(),
+        appointmentId: form.appointmentId?.trim() || undefined,
         symptoms: form.symptoms,
         diagnosis: form.diagnosis,
         treatmentPlan: form.treatmentPlan || undefined,
