@@ -1,9 +1,10 @@
-import axiosInstance from './axios';
+import api from './axios';
 
 export const ipdApi = {
-  getAvailableBeds: () => axiosInstance.get('/beds/available'),
-  admitPatient: (data) => axiosInstance.post('/admissions', data),
-  getAdmissionById: (id) => axiosInstance.get(`/admissions/${id}`),
-  transferBed: (id, bedId) => axiosInstance.patch(`/admissions/${id}/transfer`, null, { params: { newBedId: bedId } }),
-  dischargePatient: (id, data) => axiosInstance.patch(`/admissions/${id}/discharge`, data),
+  getAll: (params) => api.get('/admissions', { params }),
+  getAvailableBeds: () => api.get('/beds/available'),
+  admitPatient: (data) => api.post('/admissions', data),
+  getAdmissionById: (id) => api.get(`/admissions/${id}`),
+  transferBed: (id, data) => api.patch(`/admissions/${id}/transfer`, data),
+  dischargePatient: (id, data) => api.patch(`/admissions/${id}/discharge`, data),
 };

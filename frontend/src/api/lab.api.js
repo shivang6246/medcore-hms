@@ -1,10 +1,10 @@
-import axiosInstance from './axios';
+import api from './axios';
 
 export const labApi = {
-  createTest: (data) => axiosInstance.post('/lab-tests', data),
-  getTestById: (id) => axiosInstance.get(`/lab-tests/${id}`),
-  getByPatient: (patientId, params) => axiosInstance.get(`/patients/${patientId}/lab-tests`, { params }),
-  updateStatus: (id, status) => axiosInstance.patch(`/lab-tests/${id}/status`, null, { params: { status } }),
-  addReport: (id, data) => axiosInstance.post(`/lab-tests/${id}/reports`, data),
-  publishReport: (reportId) => axiosInstance.patch(`/lab-reports/${reportId}/publish`),
+  getAll: (params) => api.get('/lab-tests', { params }),
+  createTest: (data) => api.post('/lab-tests', data),
+  getTestById: (id) => api.get(`/lab-tests/${id}`),
+  getByPatient: (patientId, params) => api.get(`/patients/${patientId}/lab-tests`, { params }),
+  updateStatus: (id, data) => api.patch(`/lab-tests/${id}/status`, data),
+  publishReport: (labTestId, data) => api.post(`/lab-tests/${labTestId}/report`, data),
 };

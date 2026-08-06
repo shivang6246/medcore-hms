@@ -1,9 +1,12 @@
-import axiosInstance from './axios';
+import api from './axios';
 
 export const prescriptionApi = {
-  create: (data) => axiosInstance.post('/prescriptions', data),
-  getById: (id) => axiosInstance.get(`/prescriptions/${id}`),
-  update: (id, data) => axiosInstance.put(`/prescriptions/${id}`, data),
-  getByMedicalRecord: (medicalRecordId, params) => axiosInstance.get(`/medical-records/${medicalRecordId}/prescriptions`, { params }),
-  deactivate: (id) => axiosInstance.delete(`/prescriptions/${id}`),
+  create: (data) => api.post('/prescriptions', data),
+  getById: (id) => api.get(`/prescriptions/${id}`),
+  update: (id, data) => api.put(`/prescriptions/${id}`, data),
+  deactivate: (id) => api.patch(`/prescriptions/${id}/deactivate`),
+  getByMedicalRecord: (medicalRecordId, params) =>
+    api.get(`/medical-records/${medicalRecordId}/prescriptions`, { params }),
+  getAllByMedicalRecord: (medicalRecordId, params) =>
+    api.get(`/medical-records/${medicalRecordId}/prescriptions/all`, { params }),
 };
