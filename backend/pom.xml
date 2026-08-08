@@ -104,6 +104,13 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- H2 in-memory DB for CI/test — replaces PostgreSQL during test runs -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- JWT -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

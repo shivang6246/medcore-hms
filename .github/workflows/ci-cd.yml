@@ -7,7 +7,12 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
-  build-and-test:
+  # ─────────────────────────────────────────────────────────
+  # Job 1: Unit Tests (pure Mockito — no external services)
+  # Uses H2 in-memory DB via src/test/resources/application.properties
+  # ─────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -21,11 +26,22 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build and Test with Maven
-        run: |
-          cd backend
-          mvn clean test
+      - name: Run Unit Tests (H2 in-memory DB)
+        working-directory: backend
+        run: mvn clean test -pl . --no-transfer-progress
+
+  # ─────────────────────────────────────────────────────────
+  # Job 2: Docker Build (only on success of unit tests)
+  # ─────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Build Docker Image
-        run: |
-          docker build -t medcore-hms-backend:latest .
+        run: docker build -t medcore-hms-backend:latest .
+
