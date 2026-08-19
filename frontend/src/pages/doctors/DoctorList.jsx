@@ -67,8 +67,21 @@ const DoctorFormModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Onboard New Doctor" maxWidth="680px">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Onboard New Doctor"
+      maxWidth="680px"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="onboard-doctor-form" variant="primary" loading={loading}>
+            Onboard Doctor
+          </Button>
+        </>
+      }
+    >
+      <form id="onboard-doctor-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">First Name *</label>
@@ -139,10 +152,6 @@ const DoctorFormModal = ({ isOpen, onClose, onSuccess }) => {
               <option value="OTHER">Other</option>
             </select>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={loading}>Onboard Doctor</Button>
         </div>
       </form>
     </Modal>
@@ -232,7 +241,7 @@ const DoctorList = () => {
                   <tr key={d.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                        <div className="avatar avatar-sm" style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>
+                        <div className="avatar avatar-sm" style={{ background: 'linear-gradient(135deg, #0a4d4a, #14706c)' }}>
                           {`${d.firstName?.[0] ?? ''}${d.lastName?.[0] ?? ''}`}
                         </div>
                         <div>

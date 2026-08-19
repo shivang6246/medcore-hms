@@ -114,9 +114,9 @@ const CreateSessionModal = ({ isOpen, onClose, onSuccess }) => {
 const statusBadge = (status) => {
   const map = {
     WAITING_ROOM: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', label: 'Waiting Room', icon: Clock },
-    IN_PROGRESS: { bg: 'rgba(59,130,246,0.1)', color: '#3b82f6', label: 'In Progress', icon: Play },
+    IN_PROGRESS: { bg: 'rgba(10, 77, 74,0.1)', color: '#0a4d4a', label: 'In Progress', icon: Play },
     COMPLETED: { bg: 'rgba(16,185,129,0.1)', color: '#10b981', label: 'Completed', icon: CheckCircle },
-    SCHEDULED: { bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6', label: 'Scheduled', icon: Clock },
+    SCHEDULED: { bg: 'rgba(20, 112, 108,0.1)', color: '#14706c', label: 'Scheduled', icon: Clock },
     CANCELLED: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', label: 'Cancelled', icon: PhoneOff },
   };
   return map[status] ?? { bg: 'rgba(100,100,100,0.1)', color: 'var(--text-secondary)', label: status, icon: Video };
@@ -131,7 +131,7 @@ const SessionCard = ({ session, onAction }) => {
     <div className="card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg-elevated)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+          <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(10, 77, 74,0.1)', color: '#0a4d4a' }}>
             <Video size={24} />
           </div>
           <div>

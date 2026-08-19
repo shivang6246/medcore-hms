@@ -10,6 +10,7 @@ import com.medcore.hms.billing.repository.InvoiceRepository;
 import com.medcore.hms.billing.repository.PaymentRepository;
 import com.medcore.hms.dashboard.dto.*;
 import com.medcore.hms.dashboard.service.DashboardService;
+import com.medcore.hms.doctor.entity.Gender;
 import com.medcore.hms.doctor.repository.DoctorRepository;
 import com.medcore.hms.ipd.dto.BedResponseDto;
 import com.medcore.hms.ipd.entity.Bed;
@@ -80,7 +81,12 @@ public class DashboardServiceImpl implements DashboardService {
 
         double occupancyRate = totalBeds > 0 ? ((double) occupiedBeds / totalBeds) * 100.0 : 0.0;
 
-        List<AnalyticsTrendDto> revenueTrends = getRevenueAnalytics(hospitalId, 6);
+        List<AnalyticsTrendDto> revenueTrends = getRevenueAnalytics(hospitalId, 12);
+
+        long malePatients = patientRepository.countByGender(Gender.MALE);
+        long femalePatients = patientRepository.countByGender(Gender.FEMALE);
+        long otherPatients = patientRepository.countByGender(Gender.OTHER)
+                + patientRepository.countByGender(Gender.PREFER_NOT_TO_SAY);
 
         return new AdminDashboardDto(
                 totalPatients,
@@ -91,9 +97,12 @@ public class DashboardServiceImpl implements DashboardService {
                 Math.round(occupancyRate * 10.0) / 10.0,
                 totalBeds,
                 occupiedBeds,
+                malePatients,
+                femalePatients,
+                otherPatients,
                 revenueTrends,
-                List.of(), // Department breakdown dynamically populated in reporting
-                List.of()  // Doctor performance breakdown
+                List.of(),
+                List.of()
         );
     }
 

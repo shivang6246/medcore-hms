@@ -31,6 +31,15 @@ public record AdminDashboardDto(
         @Schema(description = "Occupied beds count")
         long occupiedBeds,
 
+        @Schema(description = "Male patient count")
+        long malePatients,
+
+        @Schema(description = "Female patient count")
+        long femalePatients,
+
+        @Schema(description = "Other / unspecified patient count")
+        long otherPatients,
+
         @Schema(description = "Monthly revenue trends for charting")
         List<AnalyticsTrendDto> revenueTrends,
 

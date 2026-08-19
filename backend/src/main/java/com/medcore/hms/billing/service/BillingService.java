@@ -25,4 +25,8 @@ public interface BillingService {
     RefundResponseDto refundInvoice(UUID invoiceId, RefundRequestDto dto);
 
     RevenueReportDto getRevenueReport(LocalDate startDate, LocalDate endDate);
+
+    PaymentResponseDto processStripePayment(UUID invoiceId, StripePaymentRequestDto dto);
+
+    byte[] generateInvoicePdf(UUID invoiceId);
 }

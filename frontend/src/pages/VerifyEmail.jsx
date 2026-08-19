@@ -89,18 +89,18 @@ const VerifyEmail = () => {
             style={{
               width: 56,
               height: 56,
-              borderRadius: '1rem',
+              borderRadius: '50%',
               background: 'var(--gradient-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: '1rem',
-              boxShadow: 'var(--shadow-glow-strong)',
+              boxShadow: 'var(--shadow-glow)',
             }}
           >
-            <Mail size={26} color="#fff" />
+            <Mail size={24} color="#c8ed45" />
           </div>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, marginBottom: '0.25rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-2xl)', fontWeight: 800, marginBottom: '0.25rem' }}>
             Verify Email
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', textAlign: 'center' }}>
@@ -152,7 +152,7 @@ const VerifyEmail = () => {
                 border: digit
                   ? '2px solid var(--color-primary)'
                   : '1px solid var(--color-border)',
-                background: digit ? 'rgba(59,130,246,0.08)' : 'var(--color-bg-input)',
+                background: digit ? 'rgba(10, 77, 74,0.08)' : 'var(--color-bg-input)',
                 color: 'var(--text-primary)',
                 outline: 'none',
                 transition: 'all var(--transition-fast)',

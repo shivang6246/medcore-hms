@@ -32,6 +32,17 @@ public class BillingMapper {
                 ? invoice.getPayments().stream().map(this::toPaymentResponseDto).toList()
                 : List.of();
 
+        java.math.BigDecimal discountPct = invoice.getDiscountPercentage();
+        if ((discountPct == null || discountPct.compareTo(java.math.BigDecimal.ZERO) == 0)
+                && invoice.getDiscountAmount() != null
+                && invoice.getSubtotal() != null
+                && invoice.getSubtotal().compareTo(java.math.BigDecimal.ZERO) > 0) {
+            discountPct = invoice.getDiscountAmount()
+                    .multiply(java.math.BigDecimal.valueOf(100))
+                    .divide(invoice.getSubtotal(), 2, java.math.RoundingMode.HALF_UP);
+        }
+        if (discountPct == null) discountPct = java.math.BigDecimal.ZERO;
+
         return new InvoiceResponseDto(
                 invoice.getId(),
                 invoice.getInvoiceNumber(),
@@ -43,6 +54,7 @@ public class BillingMapper {
                 invoice.getSubtotal(),
                 invoice.getTaxAmount(),
                 invoice.getDiscountAmount(),
+                discountPct,
                 invoice.getGrandTotal(),
                 invoice.getPaidAmount(),
                 invoice.getBalanceDue(),

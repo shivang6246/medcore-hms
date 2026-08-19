@@ -156,14 +156,14 @@ const DoctorDetail = () => {
                 width: 96,
                 height: 96,
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                background: 'linear-gradient(135deg, #0a4d4a, #14706c)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '2rem',
                 fontWeight: 800,
                 color: '#fff',
-                boxShadow: '0 0 32px rgba(139,92,246,0.3)',
+                boxShadow: '0 0 32px rgba(20, 112, 108,0.3)',
               }}
             >
               {initials}

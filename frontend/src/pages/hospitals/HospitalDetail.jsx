@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const DetailRow = ({ icon: Icon, label, value }) => (
   <div style={{ display: 'flex', gap: '0.875rem', padding: '0.875rem 0', borderBottom: '1px solid var(--color-border)' }}>
-    <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', flexShrink: 0, marginTop: 2 }}>
+    <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', background: 'rgba(10, 77, 74,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', flexShrink: 0, marginTop: 2 }}>
       <Icon size={14} />
     </div>
     <div>
@@ -96,7 +96,7 @@ const HospitalDetail = () => {
           <DetailRow icon={MapPin} label="Country" value={addr?.country} />
           <DetailRow icon={MapPin} label="Postal Code" value={addr?.postalCode} />
 
-          <div style={{ marginTop: '1rem', padding: '0.875rem', background: 'rgba(59,130,246,0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+          <div style={{ marginTop: '1rem', padding: '0.875rem', background: 'rgba(10, 77, 74,0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
             <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Hospital ID</p>
             <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-primary)', fontFamily: 'monospace', wordBreak: 'break-all' }}>{hospital.id}</p>
           </div>

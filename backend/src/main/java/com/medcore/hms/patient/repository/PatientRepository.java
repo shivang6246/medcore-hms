@@ -32,6 +32,8 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
 
     List<Patient> findByHospital_IdAndIsActiveTrue(UUID hospitalId);
 
+    long countByGender(com.medcore.hms.doctor.entity.Gender gender);
+
     boolean existsByPatientIdAndHospital_Id(String patientId, UUID hospitalId);
 
     boolean existsByPhoneAndHospital_Id(String phone, UUID hospitalId);

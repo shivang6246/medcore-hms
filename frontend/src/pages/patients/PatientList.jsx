@@ -47,8 +47,21 @@ const PatientFormModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Register New Patient" maxWidth="700px">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Register New Patient"
+      maxWidth="700px"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="register-patient-form" variant="primary" loading={loading}>
+            Register Patient
+          </Button>
+        </>
+      }
+    >
+      <form id="register-patient-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">First Name *</label>
@@ -101,8 +114,10 @@ const PatientFormModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         </div>
 
-        <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
-          <p style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>Emergency Contact</p>
+        <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.85rem', marginTop: '0.85rem' }}>
+          <p style={{ fontWeight: 600, marginBottom: '0.65rem', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+            Emergency Contact
+          </p>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Name *</label>
@@ -117,11 +132,6 @@ const PatientFormModal = ({ isOpen, onClose, onSuccess }) => {
               <input value={form.emergencyContactRelationship} onChange={(e) => set('emergencyContactRelationship', e.target.value)} placeholder="Spouse" />
             </div>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={loading}>Register Patient</Button>
         </div>
       </form>
     </Modal>
@@ -225,7 +235,7 @@ const PatientList = () => {
                   <tr key={p.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                        <div className="avatar avatar-sm" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
+                        <div className="avatar avatar-sm" style={{ background: 'linear-gradient(135deg, #0a4d4a, #7ec8c2)' }}>
                           {`${p.firstName?.[0] ?? ''}${p.lastName?.[0] ?? ''}`}
                         </div>
                         <div>

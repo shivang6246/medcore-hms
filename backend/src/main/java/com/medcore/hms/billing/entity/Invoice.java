@@ -70,6 +70,10 @@ public class Invoice extends BaseEntity {
     @Builder.Default
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Transient
+    @Builder.Default
+    private BigDecimal discountPercentage = BigDecimal.ZERO;
+
     @NotNull
     @DecimalMin("0.00")
     @Column(name = "grand_total", precision = 10, scale = 2, nullable = false)

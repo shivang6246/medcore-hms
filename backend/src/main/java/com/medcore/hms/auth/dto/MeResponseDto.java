@@ -17,5 +17,6 @@ public record MeResponseDto(
         Boolean isActive,
         UUID hospitalId,
         String hospitalName,
-        UUID patientId
+        UUID patientId,
+        UUID doctorId
 ) {}

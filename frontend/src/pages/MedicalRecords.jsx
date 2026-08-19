@@ -385,7 +385,7 @@ export default function MedicalRecords() {
             <div key={r.id} className="card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg-elevated)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                  <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(10, 77, 74, 0.1)', color: '#0a4d4a' }}>
                     <FileText size={24} />
                   </div>
                   <div>

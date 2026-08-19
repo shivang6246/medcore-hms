@@ -68,7 +68,7 @@ class DashboardControllerTest {
         void getAdminDashboard_Success() throws Exception {
             AdminDashboardDto dto = new AdminDashboardDto(
                     100, 15, 10, new BigDecimal("15000.00"), new BigDecimal("2000.00"),
-                    60.0, 50, 30, List.of(), List.of(), List.of()
+                    60.0, 50, 30, 40, 50, 10, List.of(), List.of(), List.of()
             );
 
             when(dashboardService.getAdminDashboard(any())).thenReturn(dto);

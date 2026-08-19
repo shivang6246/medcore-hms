@@ -52,18 +52,18 @@ const Login = () => {
             style={{
               width: 56,
               height: 56,
-              borderRadius: '1rem',
+              borderRadius: '50%',
               background: 'var(--gradient-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: '1rem',
-              boxShadow: 'var(--shadow-glow-strong)',
+              boxShadow: 'var(--shadow-glow)',
             }}
           >
-            <Heart size={26} color="#fff" fill="#fff" />
+            <Heart size={24} color="#c8ed45" fill="#c8ed45" />
           </div>
-          <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, marginBottom: '0.25rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-2xl)', fontWeight: 800, marginBottom: '0.25rem' }}>
             Welcome back
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>

@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const InfoRow = ({ icon: Icon, label, value }) => (
   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.875rem', padding: '0.875rem 0', borderBottom: '1px solid var(--color-border)' }}>
-    <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', flexShrink: 0, marginTop: 2 }}>
+    <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', background: 'rgba(10, 77, 74,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', flexShrink: 0, marginTop: 2 }}>
       <Icon size={16} />
     </div>
     <div>

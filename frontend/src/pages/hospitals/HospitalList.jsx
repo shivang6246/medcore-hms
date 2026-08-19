@@ -45,8 +45,21 @@ const HospitalFormModal = ({ isOpen, onClose, onSuccess, initial }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={initial?.id ? 'Edit Hospital' : 'New Hospital'} maxWidth="640px">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initial?.id ? 'Edit Hospital' : 'New Hospital'}
+      maxWidth="640px"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="hospital-form" variant="primary" loading={loading}>
+            {initial?.id ? 'Update' : 'Create'}
+          </Button>
+        </>
+      }
+    >
+      <form id="hospital-form" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Hospital Name *</label>
@@ -74,8 +87,8 @@ const HospitalFormModal = ({ isOpen, onClose, onSuccess, initial }) => {
           </div>
         </div>
 
-        <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
-          <p style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>Address</p>
+        <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.85rem', marginTop: '0.85rem' }}>
+          <p style={{ fontWeight: 600, marginBottom: '0.65rem', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>Address</p>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Street</label>
@@ -98,11 +111,6 @@ const HospitalFormModal = ({ isOpen, onClose, onSuccess, initial }) => {
               <input value={form.address.postalCode} onChange={(e) => setAddr('postalCode', e.target.value)} placeholder="400001" />
             </div>
           </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" loading={loading}>{initial?.id ? 'Update' : 'Create'}</Button>
         </div>
       </form>
     </Modal>
@@ -214,7 +222,7 @@ const HospitalList = () => {
                   <tr key={h.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', background: 'rgba(59,130,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-sm)', background: 'rgba(10, 77, 74,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Building2 size={14} color="var(--color-primary)" />
                         </div>
                         <div>

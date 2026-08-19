@@ -41,6 +41,9 @@ public record InvoiceResponseDto(
         @Schema(description = "Discount amount")
         BigDecimal discountAmount,
 
+        @Schema(description = "Discount percentage")
+        BigDecimal discountPercentage,
+
         @Schema(description = "Grand total amount")
         BigDecimal grandTotal,
 

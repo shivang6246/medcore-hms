@@ -262,7 +262,7 @@ const AppointmentList = () => {
                 data.content.map((a) => (
                   <tr key={a.id}>
                     <td>
-                      <code style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-primary-light)', background: 'rgba(59,130,246,0.08)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-sm)' }}>
+                      <code style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-primary-light)', background: 'rgba(10, 77, 74,0.08)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-sm)' }}>
                         {a.appointmentNumber}
                       </code>
                     </td>

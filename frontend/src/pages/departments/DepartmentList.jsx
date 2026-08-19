@@ -59,7 +59,7 @@ const DepartmentList = () => {
                     width: 40,
                     height: 40,
                     borderRadius: 'var(--radius-md)',
-                    background: 'rgba(59,130,246,0.12)',
+                    background: 'rgba(10, 77, 74,0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

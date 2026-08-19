@@ -126,9 +126,9 @@ const OrderLabTestModal = ({ isOpen, onClose, onSuccess }) => {
 const statusStyle = (status) => {
   switch (status) {
     case 'PUBLISHED': return { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' };
-    case 'SAMPLE_COLLECTED': return { background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' };
+    case 'SAMPLE_COLLECTED': return { background: 'rgba(10, 77, 74, 0.1)', color: '#0a4d4a' };
     case 'IN_PROGRESS': return { background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' };
-    default: return { background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' };
+    default: return { background: 'rgba(20, 112, 108, 0.1)', color: '#14706c' };
   }
 };
 
@@ -208,7 +208,7 @@ export default function Laboratory() {
             <div key={t.id} className="card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--color-border)', background: 'var(--color-bg-elevated)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
+                  <div style={{ padding: '0.5rem', borderRadius: '8px', background: 'rgba(20, 112, 108, 0.1)', color: '#14706c' }}>
                     <FlaskConical size={24} />
                   </div>
                   <div>

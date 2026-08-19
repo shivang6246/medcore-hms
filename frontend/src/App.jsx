@@ -27,7 +27,7 @@ import IpdManagement from './pages/IpdManagement';
 import Telemedicine from './pages/Telemedicine';
 
 // Layout
-import ProtectedRoute from './components/Layout/ProtectedRoute';
+import ProtectedRoute, { AppShell } from './components/Layout/ProtectedRoute';
 
 function App() {
   return (
@@ -37,19 +37,19 @@ function App() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: 'var(--color-bg-elevated)',
+            background: '#ffffff',
             color: 'var(--text-primary)',
             border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: '1rem',
             fontSize: 'var(--font-size-sm)',
             fontFamily: 'var(--font-family)',
             boxShadow: 'var(--shadow-md)',
           },
           success: {
-            iconTheme: { primary: '#10b981', secondary: 'var(--color-bg-elevated)' },
+            iconTheme: { primary: '#0a4d4a', secondary: '#c8ed45' },
           },
           error: {
-            iconTheme: { primary: '#ef4444', secondary: 'var(--color-bg-elevated)' },
+            iconTheme: { primary: '#e11d48', secondary: '#ffffff' },
           },
         }}
       />
@@ -60,8 +60,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
 
-        {/* Protected — all authenticated users */}
-        <Route element={<ProtectedRoute />}>
+        {/* Protected shell */}
+        <Route element={<AppShell />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/appointments" element={<AppointmentList />} />
@@ -72,35 +72,21 @@ function App() {
           <Route path="/billing" element={<Billing />} />
           <Route path="/ipd" element={<IpdManagement />} />
           <Route path="/telemedicine" element={<Telemedicine />} />
-
-          {/* Patient access */}
-          <Route
-            path="/patients"
-            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']} />}
-          >
-            <Route index element={<PatientList />} />
-          </Route>
-
-          {/* Hospital access */}
-          <Route
-            path="/hospitals"
-            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN']} />}
-          >
-            <Route index element={<HospitalList />} />
-            <Route path=":id" element={<HospitalDetail />} />
-          </Route>
-
-          {/* Doctor access */}
-          <Route
-            path="/doctors"
-            element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PATIENT']} />}
-          >
-            <Route index element={<DoctorList />} />
-            <Route path=":id" element={<DoctorDetail />} />
-          </Route>
-
-          {/* Departments */}
           <Route path="/departments" element={<DepartmentList />} />
+
+          <Route element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'NURSE', 'RECEPTIONIST']} />}>
+            <Route path="/patients" element={<PatientList />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN']} />}>
+            <Route path="/hospitals" element={<HospitalList />} />
+            <Route path="/hospitals/:id" element={<HospitalDetail />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={['SUPER_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'RECEPTIONIST', 'PATIENT']} />}>
+            <Route path="/doctors" element={<DoctorList />} />
+            <Route path="/doctors/:id" element={<DoctorDetail />} />
+          </Route>
         </Route>
 
         {/* Catch-all */}

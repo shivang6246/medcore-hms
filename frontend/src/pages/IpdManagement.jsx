@@ -219,7 +219,7 @@ const statusStyle = (status) => {
     case 'ADMITTED': return { background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' };
     case 'DISCHARGED': return { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' };
     case 'TRANSFERRED': return { background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' };
-    default: return { background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' };
+    default: return { background: 'rgba(20, 112, 108, 0.1)', color: '#14706c' };
   }
 };
 

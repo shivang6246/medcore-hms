@@ -1,66 +1,126 @@
 import React from 'react';
+import { DotSpark } from './charts';
 
-const StatCard = ({ title, value, icon: Icon, color = '#3b82f6', change, subtitle }) => {
-  const bgGlow = `${color}18`;
-  const borderGlow = `${color}30`;
+const StatCard = ({
+  title,
+  value,
+  change,
+  subtitle,
+  variant = 'light',
+  sparkValues,
+  sparkHighlight = -1,
+  bedStats,
+  icon: Icon,
+  color,
+}) => {
+  const isDark = variant === 'dark';
 
   return (
     <div
-      className="glass-card"
+      className="glass-card animate-rise"
       style={{
-        padding: '1.5rem',
-        background: `linear-gradient(135deg, ${bgGlow} 0%, rgba(13,18,32,0.6) 100%)`,
-        border: `1px solid ${borderGlow}`,
-        transition: 'all 0.25s ease',
-        cursor: 'default',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = `0 8px 32px ${color}20`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '';
+        padding: '1.35rem 1.4rem',
+        background: isDark ? 'var(--gradient-hero-dark)' : '#fff',
+        border: isDark ? 'none' : '1px solid var(--color-border)',
+        color: isDark ? '#fff' : 'var(--text-primary)',
+        minHeight: 170,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
         <div>
-          <p style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
+          <p
+            style={{
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: isDark ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+              marginBottom: '0.45rem',
+            }}
+          >
             {title}
           </p>
-          <h3 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
-            {value ?? '—'}
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.55rem', flexWrap: 'wrap' }}>
+            <h3
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '2rem',
+                fontWeight: 800,
+                color: isDark ? '#fff' : 'var(--text-primary)',
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {value ?? '—'}
+            </h3>
+            {change != null && (
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: isDark ? 'var(--color-secondary)' : 'var(--color-success)',
+                }}
+              >
+                {change >= 0 ? '+' : ''}
+                {change}%
+              </span>
+            )}
+          </div>
           {subtitle && (
-            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+            <p
+              style={{
+                fontSize: '0.75rem',
+                marginTop: '0.4rem',
+                color: isDark ? 'rgba(255,255,255,0.55)' : 'var(--text-muted)',
+              }}
+            >
               {subtitle}
-            </p>
-          )}
-          {change !== undefined && (
-            <p style={{ fontSize: 'var(--font-size-xs)', marginTop: '0.4rem', color: change >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-              {change >= 0 ? '▲' : '▼'} {Math.abs(change)}% from last month
             </p>
           )}
         </div>
         {Icon && (
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: '0.875rem',
-              background: `${color}20`,
-              border: `1px solid ${color}30`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color,
-              flexShrink: 0,
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              background: isDark ? 'rgba(255,255,255,0.1)' : `${color || 'var(--color-primary)'}18`,
+              display: 'grid',
+              placeItems: 'center',
+              color: isDark ? 'var(--color-secondary)' : color || 'var(--color-primary)',
             }}
           >
-            <Icon size={22} />
+            <Icon size={18} />
           </div>
         )}
       </div>
+
+      {sparkValues && (
+        <DotSpark values={sparkValues} highlightIndex={sparkHighlight} onDark={isDark} />
+      )}
+
+      {bedStats && (
+        <div>
+          <div className="bed-track">
+            <div className="bed-track-booked" style={{ width: `${bedStats.bookedPct}%` }} />
+            <div className="bed-track-free" style={{ width: `${bedStats.availablePct}%` }} />
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '0.55rem',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              color: isDark ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+            }}
+          >
+            <span>Booked {bedStats.bookedPct}%</span>
+            <span>Available {bedStats.availablePct}%</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

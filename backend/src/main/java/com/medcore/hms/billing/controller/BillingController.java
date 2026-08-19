@@ -116,6 +116,30 @@ public class BillingController {
         return ResponseEntity.ok(ApiResponse.success(response, "Payment details fetched successfully"));
     }
 
+    @Operation(summary = "Process Stripe payment for an invoice", description = "Processes an online Stripe payment, updates invoice status, generates PDF, and emails patient.")
+    @PostMapping("/api/invoices/{id}/stripe-pay")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'PATIENT')")
+    public ResponseEntity<ApiResponse<PaymentResponseDto>> processStripePayment(
+            @Parameter(description = "Invoice UUID", required = true) @PathVariable("id") UUID invoiceId,
+            @RequestBody(required = false) StripePaymentRequestDto dto) {
+        log.info("REST request for Stripe payment on invoice ID: {}", invoiceId);
+        PaymentResponseDto response = billingService.processStripePayment(invoiceId, dto);
+        return ResponseEntity.ok(ApiResponse.success(response, "Stripe payment processed successfully. PDF invoice emailed to patient."));
+    }
+
+    @Operation(summary = "Download / View PDF invoice")
+    @GetMapping("/api/invoices/{id}/pdf")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'HOSPITAL_ADMIN', 'RECEPTIONIST', 'ACCOUNTANT', 'PATIENT')")
+    public ResponseEntity<byte[]> getInvoicePdf(
+            @Parameter(description = "Invoice UUID", required = true) @PathVariable("id") UUID invoiceId) {
+        log.info("REST request to download PDF for invoice ID: {}", invoiceId);
+        byte[] pdfBytes = billingService.generateInvoicePdf(invoiceId);
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", "Invoice-" + invoiceId + ".pdf");
+        return ResponseEntity.ok().headers(headers).body(pdfBytes);
+    }
+
     // ── Refund & Reports ─────────────────────────────────────────────────────
 
     @Operation(summary = "Process refund for an invoice")

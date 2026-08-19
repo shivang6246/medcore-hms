@@ -32,8 +32,12 @@ public record CreateInvoiceRequestDto(
         BigDecimal taxAmount,
 
         @DecimalMin(value = "0.00", message = "Discount amount cannot be negative")
-        @Schema(description = "Discount amount", example = "10.00")
+        @Schema(description = "Discount amount in INR", example = "10.00")
         BigDecimal discountAmount,
+
+        @DecimalMin(value = "0.00", message = "Discount percentage cannot be negative")
+        @Schema(description = "Discount percentage (0-100%)", example = "10.00")
+        BigDecimal discountPercentage,
 
         @NotEmpty(message = "Invoice line items list cannot be empty")
         @Valid

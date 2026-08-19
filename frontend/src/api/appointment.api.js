@@ -2,6 +2,7 @@ import api from './axios';
 
 export const appointmentApi = {
   getAll: (params) => api.get('/appointments', { params }),
+  search: (params) => api.get('/appointments/search', { params }),
   getByPatient: (patientId, params) => api.get(`/appointments/patient/${patientId}`, { params }),
   getByDoctor: (doctorId, params) => api.get(`/appointments/doctor/${doctorId}`, { params }),
   getById: (id) => api.get(`/appointments/${id}`),

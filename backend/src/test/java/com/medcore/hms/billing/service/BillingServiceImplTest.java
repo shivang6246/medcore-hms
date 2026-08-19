@@ -41,6 +41,8 @@ class BillingServiceImplTest {
     @Mock private PaymentRepository paymentRepository;
     @Mock private PatientRepository patientRepository;
     @Mock private BillingMapper billingMapper;
+    @Mock private InvoicePdfService invoicePdfService;
+    @Mock private InvoiceEmailService invoiceEmailService;
 
     @InjectMocks
     private BillingServiceImpl billingService;
@@ -77,13 +79,13 @@ class BillingServiceImplTest {
 
         createInvoiceDto = new CreateInvoiceRequestDto(
                 patientId, null, LocalDate.now(), LocalDate.now().plusDays(14),
-                new BigDecimal("20.00"), new BigDecimal("10.00"),
+                new BigDecimal("20.00"), new BigDecimal("10.00"), new BigDecimal("5.00"),
                 List.of(new InvoiceItemRequestDto("Consultation", ItemCategory.CONSULTATION, new BigDecimal("200.00"), 1))
         );
 
         invoiceResponseDto = new InvoiceResponseDto(
                 invoiceId, "INV-100", patientId, "John Doe", null, LocalDate.now(), LocalDate.now().plusDays(14),
-                new BigDecimal("200.00"), new BigDecimal("20.00"), new BigDecimal("10.00"),
+                new BigDecimal("200.00"), new BigDecimal("20.00"), new BigDecimal("10.00"), new BigDecimal("5.00"),
                 new BigDecimal("210.00"), BigDecimal.ZERO, new BigDecimal("210.00"),
                 InvoiceStatus.UNPAID, List.of(), List.of(), LocalDateTime.now()
         );
@@ -104,7 +106,7 @@ class BillingServiceImplTest {
 
             assertThat(result).isNotNull();
             assertThat(result.invoiceNumber()).isEqualTo("INV-100");
-            verify(invoiceRepository, times(2)).save(any(Invoice.class));
+            verify(invoiceRepository, times(1)).save(any(Invoice.class));
         }
 
         @Test

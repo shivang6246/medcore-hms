@@ -18,6 +18,7 @@ import com.medcore.hms.email.service.EmailService;
 import com.medcore.hms.role.entity.Role;
 import com.medcore.hms.role.entity.RoleName;
 import com.medcore.hms.role.repository.RoleRepository;
+import com.medcore.hms.doctor.repository.DoctorRepository;
 import com.medcore.hms.patient.repository.PatientRepository;
 import com.medcore.hms.user.entity.User;
 import com.medcore.hms.user.repository.UserRepository;
@@ -68,6 +69,7 @@ public class AuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
     private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
     private final RoleProfileProvisioner roleProfileProvisioner;
 
     // -------------------------------------------------------------------------
@@ -322,6 +324,10 @@ public class AuthService {
                 .map(p -> p.getId())
                 .orElse(null);
 
+        UUID doctorId = doctorRepository.findByUser_Id(user.getId())
+                .map(d -> d.getId())
+                .orElse(null);
+
         return new MeResponseDto(
                 user.getId(),
                 user.getFirstName(),
@@ -332,7 +338,8 @@ public class AuthService {
                 user.getIsActive(),
                 user.getHospital() != null ? user.getHospital().getId() : null,
                 user.getHospital() != null ? user.getHospital().getName() : null,
-                patientId);
+                patientId,
+                doctorId);
     }
 
     // -------------------------------------------------------------------------

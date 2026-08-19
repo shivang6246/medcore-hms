@@ -75,6 +75,8 @@ class DashboardServiceImplTest {
                 .thenReturn(new BigDecimal("25000.00"));
         when(invoiceRepository.calculateTotalOutstandingBalance()).thenReturn(new BigDecimal("5000.00"));
         when(bedRepository.count()).thenReturn(50L);
+        when(bedRepository.findByStatusAndIsActiveTrue(any())).thenReturn(List.of());
+        when(patientRepository.countByGender(any())).thenReturn(0L);
 
         AdminDashboardDto result = dashboardService.getAdminDashboard(hospitalId);
 
