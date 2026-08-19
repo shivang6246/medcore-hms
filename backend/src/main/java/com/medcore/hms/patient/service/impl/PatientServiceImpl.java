@@ -248,8 +248,16 @@ public class PatientServiceImpl implements PatientService {
 
     private String generatePatientId(UUID hospitalId) {
         int year = Year.now().getValue();
-        long count = patientRepository.findByHospital_IdAndIsActiveTrue(hospitalId).size() + 1;
-        return String.format("P-%d-%05d", year, count);
+        long count = patientRepository.countByHospital_Id(hospitalId) + 1;
+        String patientId = String.format("P-%d-%05d", year, count);
+
+        // Retry with incrementing counter if ID already exists (handles race conditions / inactive gaps)
+        int maxRetries = 20;
+        while (patientRepository.existsByPatientIdAndHospital_Id(patientId, hospitalId) && maxRetries-- > 0) {
+            count++;
+            patientId = String.format("P-%d-%05d", year, count);
+        }
+        return patientId;
     }
 
     private boolean matchesName(Patient p, String name) {
