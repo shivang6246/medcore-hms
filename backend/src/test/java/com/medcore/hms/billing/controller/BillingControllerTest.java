@@ -71,13 +71,13 @@ class BillingControllerTest {
 
         createDto = new CreateInvoiceRequestDto(
                 patientId, null, LocalDate.now(), LocalDate.now().plusDays(14),
-                new BigDecimal("10.00"), BigDecimal.ZERO,
+                new BigDecimal("10.00"), BigDecimal.ZERO, BigDecimal.ZERO,
                 List.of(new InvoiceItemRequestDto("Consultation", ItemCategory.CONSULTATION, new BigDecimal("100.00"), 1))
         );
 
         responseDto = new InvoiceResponseDto(
                 invoiceId, "INV-2026-01", patientId, "John Doe", null, LocalDate.now(), LocalDate.now().plusDays(14),
-                new BigDecimal("100.00"), new BigDecimal("10.00"), BigDecimal.ZERO,
+                new BigDecimal("100.00"), new BigDecimal("10.00"), BigDecimal.ZERO, BigDecimal.ZERO,
                 new BigDecimal("110.00"), BigDecimal.ZERO, new BigDecimal("110.00"),
                 InvoiceStatus.UNPAID, List.of(), List.of(), LocalDateTime.now()
         );
