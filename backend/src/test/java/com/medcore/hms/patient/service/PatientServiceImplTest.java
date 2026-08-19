@@ -93,7 +93,8 @@ class PatientServiceImplTest {
             when(hospitalRepository.findById(hospitalId)).thenReturn(Optional.of(hospital));
             when(patientRepository.existsByPhoneAndHospital_Id(any(), any())).thenReturn(false);
             when(patientRepository.existsByEmail(any())).thenReturn(false);
-            when(patientRepository.findByHospital_IdAndIsActiveTrue(hospitalId)).thenReturn(List.of());
+            when(patientRepository.countByHospital_Id(hospitalId)).thenReturn(0L);
+            when(patientRepository.existsByPatientIdAndHospital_Id(any(), any())).thenReturn(false);
             when(patientRepository.save(any(Patient.class))).thenReturn(patient);
             when(patientMapper.toResponseDto(patient)).thenReturn(mockResponseDto());
 
