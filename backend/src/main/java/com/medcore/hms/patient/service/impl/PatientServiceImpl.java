@@ -248,16 +248,18 @@ public class PatientServiceImpl implements PatientService {
 
     private String generatePatientId(UUID hospitalId) {
         int year = Year.now().getValue();
-        long count = patientRepository.countByHospital_Id(hospitalId) + 1;
-        String patientId = String.format("P-%d-%05d", year, count);
+        String prefix = String.format("P-%d-", year);
 
-        // Retry with incrementing counter if ID already exists (handles race conditions / inactive gaps)
-        int maxRetries = 20;
-        while (patientRepository.existsByPatientIdAndHospital_Id(patientId, hospitalId) && maxRetries-- > 0) {
-            count++;
-            patientId = String.format("P-%d-%05d", year, count);
-        }
-        return patientId;
+        long nextNumber = patientRepository
+                .findMaxPatientIdByHospitalAndPrefix(hospitalId, prefix + "%")
+                .map(maxId -> {
+                    // Extract numeric suffix from e.g. "P-2026-00007" → 7
+                    String suffix = maxId.substring(prefix.length());
+                    return Long.parseLong(suffix) + 1;
+                })
+                .orElse(1L);
+
+        return String.format("P-%d-%05d", year, nextNumber);
     }
 
     private boolean matchesName(Patient p, String name) {

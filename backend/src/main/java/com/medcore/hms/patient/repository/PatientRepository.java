@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
@@ -35,6 +37,9 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
     long countByGender(com.medcore.hms.doctor.entity.Gender gender);
 
     long countByHospital_Id(UUID hospitalId);
+
+    @Query("SELECT MAX(p.patientId) FROM Patient p WHERE p.hospital.id = :hospitalId AND p.patientId LIKE :prefix")
+    Optional<String> findMaxPatientIdByHospitalAndPrefix(@Param("hospitalId") UUID hospitalId, @Param("prefix") String prefix);
 
     boolean existsByPatientIdAndHospital_Id(String patientId, UUID hospitalId);
 
