@@ -32,6 +32,22 @@ spring:
       host: ${SPRING_REDIS_HOST:redis}
       port: ${SPRING_REDIS_PORT:6379}
 
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:ultronthor037@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:vjfqdylnpyspwafo}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  mail:
+    from: ${APP_MAIL_FROM:ultronthor037@gmail.com}
+
 management:
   endpoints:
     web:
